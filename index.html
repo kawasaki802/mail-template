@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メールテンプレート管理アプリ（スマート編集画面版）</title>
+  <title>メールテンプレート管理アプリ（PC大画面最適化版）</title>
   
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -12,7 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
 </head>
-<body style="margin: 0; padding: 0; background: #f2f3f7;">
+<body style="margin: 0; padding: 0; background: #f2f3f7; font-family: sans-serif;">
 
   <div id="root"></div>
 
@@ -53,8 +53,8 @@
     function CopyBtn({ text }) {
       const [copied, setCopied] = useState(false);
       const copy = () => { navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); }); };
-      if (!text) return <button style={{ opacity: 0.5, padding: "5px 14px", borderRadius: 6, fontSize: 12, border: "none" }}>空です</button>;
-      return <button onClick={copy} style={{ background: copied ? "#2E7D32" : "#1a1a2e", color: "#fff", border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>{copied ? "✓ コピーしました" : "📋 コピー"}</button>;
+      if (!text) return <button style={{ opacity: 0.5, padding: "6px 16px", borderRadius: 6, fontSize: 13, border: "none" }}>空です</button>;
+      return <button onClick={copy} style={{ background: copied ? "#2E7D32" : "#1a1a2e", color: "#fff", border: "none", borderRadius: 6, padding: "6px 16px", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>{copied ? "✓ コピーしました" : "📋 コピー"}</button>;
     }
 
     function DropZone({ onDrop, label }) {
@@ -64,9 +64,9 @@
           onDragOver={e => { e.preventDefault(); e.stopPropagation(); setIsOver(true); }}
           onDragLeave={e => { e.stopPropagation(); setIsOver(false); }}
           onDrop={e => { e.preventDefault(); e.stopPropagation(); setIsOver(false); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); if(data.type === 'category') onDrop(data.name); } catch(err){} }}
-          style={{ height: isOver ? "30px" : "12px", background: isOver ? "#e1f5fe" : "transparent", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", margin: "-6px 0", position: "relative", zIndex: 10, border: isOver ? "2px dashed #0288d1" : "none" }}
+          style={{ height: isOver ? "36px" : "16px", background: isOver ? "#e1f5fe" : "transparent", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", margin: "-8px 0", position: "relative", zIndex: 10, border: isOver ? "2px dashed #0288d1" : "none" }}
         >
-          {isOver && <span style={{fontSize: 11, color: "#0288d1", fontWeight: "bold"}}>{label || "ここに移動"}</span>}
+          {isOver && <span style={{fontSize: 12, color: "#0288d1", fontWeight: "bold"}}>{label || "ここに移動"}</span>}
         </div>
       )
     }
@@ -75,7 +75,9 @@
       if (!text) return null;
       const regex = /\[リンク:(\d+)\]/g;
       if (!regex.test(text)) return <React.Fragment>{text}</React.Fragment>;
+
       const parts = text.split(/\[リンク:(\d+)\]/g);
+
       return (
         <React.Fragment>
           {parts.map((part, index) => {
@@ -83,8 +85,21 @@
               const targetId = Number(part);
               const targetTemplate = allTemplates.find(t => t.id === targetId);
               const title = targetTemplate ? targetTemplate.title : `不明なファイル(ID:${targetId})`;
+              
               return (
-                <button key={index} onClick={() => onLinkClick(targetId)} style={{ background: "#e1f5fe", color: "#0288d1", border: "1px solid #b3e5fc", borderRadius: "4px", padding: "2px 6px", margin: "0 2px", fontSize: "12px", fontWeight: "bold", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, verticalAlign: "middle" }} title="クリックしてこのファイルへジャンプ">
+                <button
+                  key={index}
+                  onClick={() => onLinkClick(targetId)}
+                  style={{
+                    background: "#e1f5fe", color: "#0288d1", border: "1px solid #b3e5fc",
+                    borderRadius: "4px", padding: "4px 8px", margin: "0 4px", fontSize: "14px",
+                    fontWeight: "bold", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
+                    verticalAlign: "middle", transition: "all 0.2s"
+                  }}
+                  title="クリックしてこのファイルへジャンプ"
+                  onMouseOver={e => e.target.style.background = "#b3e5fc"}
+                  onMouseOut={e => e.target.style.background = "#e1f5fe"}
+                >
                   🔗 {title}
                 </button>
               );
@@ -124,7 +139,7 @@
           img.onload = () => {
             const canvas = document.createElement('canvas');
             let w = img.width; let h = img.height;
-            const MAX = 600;
+            const MAX = 800; // PC向けに画像サイズの上限も少し拡大
             if (w > MAX || h > MAX) { if (w > h) { h *= MAX / w; w = MAX; } else { w *= MAX / h; h = MAX; } }
             canvas.width = w; canvas.height = h;
             const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h);
@@ -142,103 +157,109 @@
         e.stopPropagation(); e.currentTarget.style.opacity = "0.4";
       };
 
-      // ＝＝ 編集画面のレンダリング ＝＝
       if (isEditing) {
         return (
-          <div style={{ background: "#fff", borderRadius: 10, border: "2px solid #f0a500", marginBottom: 10, padding: "16px", boxShadow: "0 4px 12px rgba(0,0,0,.1)" }}>
-            <div style={{ marginBottom: 8, fontSize: "11px", color: "#e65100", fontWeight: "bold", background: "#fffbf0", padding: "6px", borderRadius: "4px" }}>
-              💡 別の「流れ」ファイルからここにリンクを繋ぐ場合は、文章内に <span style={{background:"#fff", padding:"2px 4px", border:"1px solid #ffe082", borderRadius:4}}>[リンク:{t.id}]</span> と記入してください。
+          <div style={{ background: "#fff", borderRadius: 10, border: "2px solid #f0a500", marginBottom: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0,0,0,.1)" }}>
+            <div style={{ marginBottom: 12, fontSize: "13px", color: "#e65100", fontWeight: "bold", background: "#fffbf0", padding: "8px 12px", borderRadius: "6px" }}>
+              💡 別の「流れ」ファイルからここにリンクを繋ぐ場合は、文章内に <span style={{background:"#fff", padding:"2px 6px", border:"1px solid #ffe082", borderRadius:4}}>[リンク:{t.id}]</span> と記入してください。
             </div>
-            <div style={{ marginBottom: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <div style={{ flex: 2, minWidth: "200px" }}>
-                <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>タイトル</label>
-                <input type="text" value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
+            <div style={{ marginBottom: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ flex: 2, minWidth: "250px" }}>
+                <label style={{ fontSize: 13, color: "#666", fontWeight: 700 }}>タイトル</label>
+                <input type="text" value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #ccc", boxSizing: "border-box", fontSize: "15px" }} />
               </div>
-              <div style={{ width: "140px" }}>
-                <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>項目タイプ</label>
-                <select value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", background: "#fff", fontWeight: "bold" }}>
+              <div style={{ width: "160px" }}>
+                <label style={{ fontSize: 13, color: "#666", fontWeight: 700 }}>項目タイプ</label>
+                <select value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})} style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #ccc", background: "#fff", fontWeight: "bold", fontSize: "15px" }}>
                   <option value="テンプレ">テンプレ</option>
                   <option value="流れ">流れ</option>
                 </select>
               </div>
             </div>
             
-            {/* ★ 項目タイプが「テンプレ」の時だけ、日本語・英語を表示（サイズ拡大） */}
             {(editData.itemType === "テンプレ" || !editData.itemType) && (
               <React.Fragment>
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>🇯🇵 日本語 テンプレート（広め）</label>
-                  <textarea value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ width: "100%", height: "160px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box", lineHeight: 1.6 }} />
-                </div>
                 <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>🇬🇧 English テンプレート（広め）</label>
-                  <textarea value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ width: "100%", height: "140px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box", lineHeight: 1.6 }} />
+                  <label style={{ fontSize: 13, color: "#666", fontWeight: 700 }}>🇯🇵 日本語 テンプレート</label>
+                  <textarea value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ width: "100%", height: "200px", padding: "12px", borderRadius: 6, border: "1px solid #ccc", boxSizing: "border-box", lineHeight: 1.6, fontSize: "15px" }} />
+                </div>
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ fontSize: 13, color: "#666", fontWeight: 700 }}>🇬🇧 English テンプレート</label>
+                  <textarea value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ width: "100%", height: "160px", padding: "12px", borderRadius: 6, border: "1px solid #ccc", boxSizing: "border-box", lineHeight: 1.6, fontSize: "15px" }} />
                 </div>
               </React.Fragment>
             )}
 
-            {/* ★ 項目タイプが「流れ」の時だけ、対応の流れを表示（大画面ノート化） */}
             {editData.itemType === "流れ" && (
-              <div style={{ marginBottom: 16, background: "#fffbf0", padding: "12px", borderRadius: 6, border: "1px solid #f0e6d2" }}>
-                <label style={{ fontSize: 11, color: "#7a5800", fontWeight: 700, display: "block", marginBottom: 6 }}>📋 対応の流れ・注意事項（超広々エリア）</label>
-                <textarea value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} placeholder="ここに業務の流れを詳しくまとめてください。[リンク:ID] を書くと、テンプレへジャンプするボタンが作れます。" style={{ width: "100%", height: "260px", padding: "10px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box", marginBottom: 10, lineHeight: 1.7, fontSize: "14px" }} />
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ marginBottom: 20, background: "#fffbf0", padding: "16px", borderRadius: 8, border: "1px solid #f0e6d2" }}>
+                <label style={{ fontSize: 13, color: "#7a5800", fontWeight: 700, display: "block", marginBottom: 8 }}>📋 対応の流れ・注意事項（広々エリア）</label>
+                <textarea value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} placeholder="ここに業務の流れを詳しくまとめてください。[リンク:ID] を書くと、テンプレへジャンプするボタンが作れます。" style={{ width: "100%", height: "350px", padding: "12px", borderRadius: 6, border: "1px solid #ccc", boxSizing: "border-box", marginBottom: 12, lineHeight: 1.7, fontSize: "15px" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <input type="file" accept="image/*" onChange={handleImageUpload} id={`file-${t.id}`} style={{ display: "none" }} />
-                  <label htmlFor={`file-${t.id}`} style={{ background: "#fff", border: "1px solid #ccc", padding: "4px 10px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontWeight: 600 }}>📷 画像を選択</label>
-                  {editData.flowImage && <img src={editData.flowImage} style={{ height: "40px", borderRadius: "4px" }} />}
+                  <label htmlFor={`file-${t.id}`} style={{ background: "#fff", border: "1px solid #ccc", padding: "6px 14px", borderRadius: 6, fontSize: 13, cursor: "pointer", fontWeight: 600 }}>📷 画像を選択</label>
+                  {editData.flowImage && <img src={editData.flowImage} style={{ height: "50px", borderRadius: "6px" }} />}
                 </div>
               </div>
             )}
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-              <button onClick={() => setIsEditing(false)} style={{ background: "#eee", border: "none", padding: "6px 16px", borderRadius: 4, cursor: "pointer" }}>キャンセル</button>
-              <button onClick={handleSave} style={{ background: "#2E7D32", color: "#fff", border: "none", padding: "6px 20px", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>保存する</button>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button onClick={() => setIsEditing(false)} style={{ background: "#eee", border: "none", padding: "8px 20px", borderRadius: 6, cursor: "pointer", fontSize: "14px", fontWeight: "bold", color: "#555" }}>キャンセル</button>
+              <button onClick={handleSave} style={{ background: "#2E7D32", color: "#fff", border: "none", padding: "8px 24px", borderRadius: 6, cursor: "pointer", fontSize: "14px", fontWeight: "bold" }}>保存する</button>
             </div>
           </div>
         );
       }
 
-      // ＝＝ 閲覧画面のレンダリング ＝＝
       return (
-        <div id={`file-card-${t.id}`} draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"} style={{ background: "#fff", borderRadius: 10, border: forceOpenId === t.id ? "2px solid #0288d1" : "1px solid #e8e8e8", marginBottom: 10, overflow: "hidden", boxShadow: forceOpenId === t.id ? "0 0 12px rgba(2,136,209,0.3)" : "0 1px 4px rgba(0,0,0,.05)", transition: "all 0.3s" }}>
-          <div onClick={() => setOpen(!open)} style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none", background: open ? "#fafafa" : "#fff" }}>
-            <span style={{ fontSize: 16, cursor: "grab", color: "#ccc" }}>☰</span>
-            <span style={{ background: TYPE_COLORS[t.itemType || "テンプレ"], color: "#fff", borderRadius: 4, padding: "2px 12px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+        <div 
+          id={`file-card-${t.id}`} 
+          draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"} 
+          style={{ 
+            background: "#fff", borderRadius: 12, border: forceOpenId === t.id ? "2px solid #0288d1" : "1px solid #e8e8e8", 
+            marginBottom: 12, overflow: "hidden", boxShadow: forceOpenId === t.id ? "0 0 16px rgba(2,136,209,0.3)" : "0 2px 6px rgba(0,0,0,.04)",
+            transition: "all 0.3s"
+          }}
+        >
+          <div onClick={() => setOpen(!open)} style={{ padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", userSelect: "none", background: open ? "#fafafa" : "#fff" }}>
+            <span style={{ fontSize: 18, cursor: "grab", color: "#ccc" }}>☰</span>
+            
+            <span style={{ background: TYPE_COLORS[t.itemType || "テンプレ"], color: "#fff", borderRadius: 6, padding: "4px 14px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>
               {t.itemType || "テンプレ"}
             </span>
-            <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>
-              {t.title}
-              <span style={{ fontSize: "11px", color: "#aaa", fontWeight: "normal", marginLeft: "8px" }}>(ID: {t.id})</span>
+            
+            <span style={{ fontWeight: 600, fontSize: 16, flex: 1, display: "flex", alignItems: "center", gap: "8px" }}>
+              {t.title} 
+              <span style={{ fontSize: "13px", color: "#aaa", fontWeight: "normal" }}>(ID: {t.id})</span>
             </span>
 
-            <div style={{ display: "flex", gap: 6 }} onClick={e => e.stopPropagation()}>
-              <button onClick={() => { setEditData({...t}); setIsEditing(true); setOpen(true); }} style={{ background: "#ebedf3", border: "none", color: "#555", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>✏️ 編集</button>
-              <button onClick={() => { if(confirm("削除しますか？")) onDelete(t.id); }} style={{ background: "#ffebee", border: "none", color: "#c62828", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>🗑️</button>
+            <div style={{ display: "flex", gap: 8 }} onClick={e => e.stopPropagation()}>
+              <button onClick={() => { setEditData({...t}); setIsEditing(true); setOpen(true); }} style={{ background: "#ebedf3", border: "none", color: "#555", fontSize: 13, padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontWeight: 600 }}>✏️ 編集</button>
+              <button onClick={() => { if(confirm("削除しますか？")) onDelete(t.id); }} style={{ background: "#ffebee", border: "none", color: "#c62828", fontSize: 13, padding: "6px 12px", borderRadius: 6, cursor: "pointer" }}>🗑️</button>
             </div>
-            <span style={{ color: "#aaa", fontSize: 14 }}>{open ? "▲" : "▼"}</span>
+            <span style={{ color: "#aaa", fontSize: 16, marginLeft: "4px" }}>{open ? "▲" : "▼"}</span>
           </div>
 
           {open && (
-            <div style={{ padding: "0 16px 14px", borderTop: "1px solid #f0f0f0" }}>
+            <div style={{ padding: "0 20px 20px", borderTop: "1px solid #f0f0f0" }}>
               {viewMode === "flow" ? (
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ background: "#fffbf0", border: "1px solid #f0e6d2", borderRadius: 6, padding: "12px 14px", fontSize: 13, lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "#222", fontFamily: "inherit" }}>
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ background: "#fffbf0", border: "1px solid #f0e6d2", borderRadius: 8, padding: "16px 20px", fontSize: 15, lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "#222", fontFamily: "inherit" }}>
                     <LinkableText text={t.flow} allTemplates={allTemplates} onLinkClick={onLinkClick} />
                   </div>
                   {t.flowImage && (
-                    <div style={{ marginTop: 12, textAlign: "center" }}>
-                      <img src={t.flowImage} style={{ maxWidth: "100%", maxHeight: "300px", borderRadius: "6px" }} />
+                    <div style={{ marginTop: 16, textAlign: "center" }}>
+                      <img src={t.flowImage} style={{ maxWidth: "100%", maxHeight: "400px", borderRadius: "8px" }} />
                     </div>
                   )}
                 </div>
               ) : (
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, marginBottom: 8 }}>
-                    <button onClick={() => setLang("ja")} style={{ padding: "4px 14px", borderRadius: 20, border: "1.5px solid", borderColor: lang === "ja" ? "#1a1a2e" : "#ddd", background: lang === "ja" ? "#1a1a2e" : "#fff", color: lang === "ja" ? "#fff" : "#555", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>🇯🇵 日本語</button>
-                    <button onClick={() => setLang("en")} style={{ padding: "4px 14px", borderRadius: 20, border: "1.5px solid", borderColor: lang === "en" ? "#1a1a2e" : "#ddd", background: lang === "en" ? "#1a1a2e" : "#fff", color: lang === "en" ? "#fff" : "#555", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>🇬🇧 English</button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 16, marginBottom: 12 }}>
+                    <button onClick={() => setLang("ja")} style={{ padding: "6px 20px", borderRadius: 24, border: "2px solid", borderColor: lang === "ja" ? "#1a1a2e" : "#ddd", background: lang === "ja" ? "#1a1a2e" : "#fff", color: lang === "ja" ? "#fff" : "#555", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>🇯🇵 日本語</button>
+                    <button onClick={() => setLang("en")} style={{ padding: "6px 20px", borderRadius: 24, border: "2px solid", borderColor: lang === "en" ? "#1a1a2e" : "#ddd", background: lang === "en" ? "#1a1a2e" : "#fff", color: lang === "en" ? "#fff" : "#555", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>🇬🇧 English</button>
                     <div style={{ marginLeft: "auto" }}><CopyBtn text={currentText} /></div>
                   </div>
-                  <pre style={{ background: "#f8f9fa", borderRadius: 6, padding: "12px 14px", fontSize: 13, lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "#222", maxHeight: 340, overflowY: "auto", fontFamily: "inherit" }}>
+                  <pre style={{ background: "#f8f9fa", borderRadius: 8, padding: "16px 20px", fontSize: 15, lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "#222", maxHeight: 400, overflowY: "auto", fontFamily: "inherit" }}>
                     <LinkableText text={currentText} allTemplates={allTemplates} onLinkClick={onLinkClick} />
                   </pre>
                 </div>
@@ -279,24 +300,24 @@
 
       if (catObj.type === "section") {
         return (
-          <div style={{ marginTop: 80, marginBottom: 24 }}>
+          <div style={{ marginTop: 60, marginBottom: 24 }}>
             <DropZone onDrop={(draggedName) => onReorderCategory(draggedName, catName)} label="ここに移動" />
-            <div draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "3px solid #1a1a2e", paddingBottom: "8px", marginBottom: "16px", cursor: "grab" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 16, color: "#ccc" }}>☰</span>
+            <div draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "3px solid #1a1a2e", paddingBottom: "10px", marginBottom: "20px", cursor: "grab" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 18, color: "#ccc" }}>☰</span>
                 {isEditingName ? (
-                  <div style={{ display: "flex", gap: 4 }}><input type="text" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: "4px", fontSize: 18, fontWeight: "bold" }} /><button onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }} style={{ background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px" }}>保存</button></div>
+                  <div style={{ display: "flex", gap: 6 }}><input type="text" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: "6px", fontSize: 20, fontWeight: "bold", borderRadius: 4, border: "1px solid #ccc" }} /><button onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }} style={{ background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 4, padding: "6px 12px", fontSize: 14, fontWeight: "bold" }}>保存</button></div>
                 ) : (
-                  <span style={{ fontSize: 20, fontWeight: 800, color: "#1a1a2e", letterSpacing: ".05em" }}>{catName}</span>
+                  <span style={{ fontSize: 24, fontWeight: 800, color: "#1a1a2e", letterSpacing: ".05em" }}>{catName}</span>
                 )}
               </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <button onClick={() => setIsEditingName(true)} style={{ background: "transparent", border: "1px solid #ccc", color: "#555", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>✏️ 名前</button>
-                <button onClick={() => onDeleteCat(catName)} style={{ background: "transparent", border: "1px solid #fca5a5", color: "#c62828", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>🗑️ 削除</button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setIsEditingName(true)} style={{ background: "transparent", border: "1px solid #ccc", color: "#555", fontSize: 13, padding: "6px 10px", borderRadius: 6, cursor: "pointer" }}>✏️ 名前</button>
+                <button onClick={() => onDeleteCat(catName)} style={{ background: "transparent", border: "1px solid #fca5a5", color: "#c62828", fontSize: 13, padding: "6px 10px", borderRadius: 6, cursor: "pointer" }}>🗑️ 削除</button>
               </div>
             </div>
             
-            <div style={{ paddingLeft: "8px" }}>
+            <div style={{ paddingLeft: "12px" }}>
               {childFolders.map(childCat => (
                 <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} level={level + 1} />
               ))}
@@ -310,31 +331,31 @@
       }
 
       return (
-        <div style={{ marginBottom: 12, marginLeft: level > 0 ? "24px" : "0" }}>
+        <div style={{ marginBottom: 16, marginLeft: level > 0 ? "32px" : "0" }}>
           <DropZone onDrop={(draggedName) => onReorderCategory(draggedName, catName)} label="上に移動" />
           
-          <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #dcdce6", overflow: "hidden", borderLeft: level > 0 ? "4px solid #1a1a2e" : "1px solid #dcdce6" }}>
-            <div draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} style={{ padding: "10px 16px", background: isOpen ? "#f0f1f5" : "#fff", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: isOpen ? "1px solid #dcdce6" : "none", cursor: "grab" }}>
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #dcdce6", overflow: "hidden", borderLeft: level > 0 ? "5px solid #1a1a2e" : "1px solid #dcdce6" }}>
+            <div draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} style={{ padding: "14px 20px", background: isOpen ? "#f0f1f5" : "#fff", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: isOpen ? "1px solid #dcdce6" : "none", cursor: "grab" }}>
               <div onClick={() => { if (!isEditingName) setIsOpen(!isOpen); }} style={{ flex: 1, display: "flex", alignItems: "center", cursor: "pointer", userSelect: "none" }}>
-                <span style={{ fontSize: 14, color: "#888", marginRight: 8, width: 14, display: "inline-block" }}>{isOpen ? "▼" : "▶"}</span>
-                <span style={{ fontSize: 18, marginRight: 6 }}>📂</span>
+                <span style={{ fontSize: 16, color: "#888", marginRight: 10, width: 16, display: "inline-block" }}>{isOpen ? "▼" : "▶"}</span>
+                <span style={{ fontSize: 20, marginRight: 8 }}>📂</span>
                 {isEditingName ? (
-                  <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: 4 }}><input type="text" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: "2px 6px", fontSize: 14 }} autoFocus /><button onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }} style={{ background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 4, padding: "2px 8px", fontSize: 12 }}>保存</button></div>
+                  <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: 6 }}><input type="text" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: "4px 8px", fontSize: 16, borderRadius: 4, border: "1px solid #ccc" }} autoFocus /><button onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }} style={{ background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 4, padding: "4px 12px", fontSize: 14, fontWeight: "bold" }}>保存</button></div>
                 ) : (
-                  <span style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>{catName}</span>
+                  <span style={{ fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>{catName}</span>
                 )}
               </div>
 
-              <div style={{ display: "flex", gap: 6 }}>
-                {level > 0 && <button onClick={(e) => { e.stopPropagation(); onMoveFolder(catName, null); }} style={{ background: "#fff", border: "1px solid #ccc", color: "#333", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>⬆️ 外へ</button>}
-                <button onClick={(e) => { e.stopPropagation(); onAddTemplate(catName); setIsOpen(true); }} style={{ background: "#2E7D32", color: "#fff", border: "none", fontSize: 11, padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontWeight: 700 }}>➕ 追加</button>
-                <button onClick={(e) => { e.stopPropagation(); setIsEditingName(true); }} style={{ background: "#ebedf3", border: "none", color: "#555", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>✏️</button>
-                <button onClick={(e) => { e.stopPropagation(); onDeleteCat(catName); }} style={{ background: "#ffebee", border: "none", color: "#c62828", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>🗑️</button>
+              <div style={{ display: "flex", gap: 8 }}>
+                {level > 0 && <button onClick={(e) => { e.stopPropagation(); onMoveFolder(catName, null); }} style={{ background: "#fff", border: "1px solid #ccc", color: "#333", fontSize: 13, padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontWeight: "bold" }}>⬆️ 外へ</button>}
+                <button onClick={(e) => { e.stopPropagation(); onAddTemplate(catName); setIsOpen(true); }} style={{ background: "#2E7D32", color: "#fff", border: "none", fontSize: 13, padding: "6px 14px", borderRadius: 6, cursor: "pointer", fontWeight: 700 }}>➕ 追加</button>
+                <button onClick={(e) => { e.stopPropagation(); setIsEditingName(true); }} style={{ background: "#ebedf3", border: "none", color: "#555", fontSize: 13, padding: "6px 12px", borderRadius: 6, cursor: "pointer" }}>✏️</button>
+                <button onClick={(e) => { e.stopPropagation(); onDeleteCat(catName); }} style={{ background: "#ffebee", border: "none", color: "#c62828", fontSize: 13, padding: "6px 12px", borderRadius: 6, cursor: "pointer" }}>🗑️</button>
               </div>
             </div>
 
             {isOpen && (
-              <div style={{ padding: "16px", background: "#f8f9fa" }}>
+              <div style={{ padding: "20px", background: "#f8f9fa" }}>
                 {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} level={level + 1} />)}
                 {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />)}
               </div>
@@ -375,7 +396,9 @@
         setTimeout(() => {
           const element = document.getElementById(`file-card-${targetId}`);
           if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // スクロール時に画面上部に少し余白ができるように調整
+            const y = element.getBoundingClientRect().top + window.scrollY - 100;
+            window.scrollTo({ top: y, behavior: 'smooth' });
             setTimeout(() => setForceOpenId(null), 1500);
           } else {
             alert("指定されたファイルが見つかりません。");
@@ -395,7 +418,7 @@
       }, [categories]);
 
       if (!categories || !templates) {
-        return <div style={{textAlign: "center", marginTop: "100px", color: "#666", fontWeight: "bold", fontFamily: "sans-serif"}}>☁️ クラウド同期中...</div>;
+        return <div style={{textAlign: "center", marginTop: "100px", color: "#666", fontSize: "16px", fontWeight: "bold", fontFamily: "sans-serif"}}>☁️ クラウド同期中...</div>;
       }
 
       const updateCats = (newCats) => db.collection('mailApp').doc('categories').set({ data: newCats });
@@ -442,23 +465,25 @@
 
       return (
         <div>
-          <div style={{ background: "#1a1a2e", color: "#fff", padding: "20px 20px 16px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 10px rgba(0,0,0,.2)" }}>
-            <div style={{ maxWidth: 820, margin: "0 auto" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: ".02em" }}>📨 クラウドメール管理システム</h1>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => handleAddCategory("folder")} style={{ background: "transparent", color: "#4fc3f7", border: "1px solid #4fc3f7", padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>📂 フォルダ追加</button>
-                  <button onClick={() => handleAddCategory("section")} style={{ background: "transparent", color: "#f0a500", border: "1px solid #f0a500", padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>➖ 区切り線</button>
+          {/* ★ ヘッダーの横幅を拡大！ maxWidth: 1000px に */}
+          <div style={{ background: "#1a1a2e", color: "#fff", padding: "24px 24px 20px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(0,0,0,.2)" }}>
+            <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: ".02em" }}>📨 クラウドメール管理システム</h1>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => handleAddCategory("folder")} style={{ background: "transparent", color: "#4fc3f7", border: "1px solid #4fc3f7", padding: "8px 14px", borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>📂 フォルダ追加</button>
+                  <button onClick={() => handleAddCategory("section")} style={{ background: "transparent", color: "#f0a500", border: "1px solid #f0a500", padding: "8px 14px", borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>➖ 区切り線</button>
                 </div>
               </div>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 キーワードで検索" style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "none", fontSize: 14, outline: "none", boxSizing: "border-box", background: "#2a2a4a", color: "#fff" }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 キーワードで検索" style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "none", fontSize: 16, outline: "none", boxSizing: "border-box", background: "#2a2a4a", color: "#fff" }} />
             </div>
           </div>
 
-          <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 12px 60px" }}>
+          {/* ★ メインエリアの横幅も拡大！ maxWidth: 1000px に */}
+          <div style={{ maxWidth: 1000, margin: "0 auto", padding: "30px 16px 80px" }}>
             {search ? (
               <div>
-                <p style={{ fontSize: 13, color: "#666", marginBottom: 12 }}>検索結果: {searchResultTemplates.length} 件</p>
+                <p style={{ fontSize: 15, color: "#666", marginBottom: 16 }}>検索結果: {searchResultTemplates.length} 件</p>
                 {searchResultTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} allTemplates={templates} onUpdate={handleUpdateTemplate} onDelete={handleDeleteTemplate} onLinkClick={handleLinkClick} forceOpenId={forceOpenId} />)}
               </div>
             ) : (
