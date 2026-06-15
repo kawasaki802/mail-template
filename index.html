@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メールテンプレート管理アプリ（項目タイプ拡張・修正版）</title>
+  <title>メールテンプレート管理アプリ（項目タイプ切替版）</title>
   
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -32,28 +32,28 @@
 
     const { useState, useMemo, useEffect } = React;
 
-    // 初期状態のデータ定義
-    const INITIAL_ITEM_TYPES = [
-      { id: "template", name: "テンプレ", viewMode: "text" },
-      { id: "flow", name: "流れ", viewMode: "flow" }
-    ];
-
+    // クラウド側の初期データを新しい仕様（itemTypeをベースに）に書き換えます
     const INITIAL_TEMPLATES = [
-      { id: 1, category: "予約前", tag: "Airbnb", title: "スペシャルオファー", itemType: "テンプレ", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n元から料金を比較的安く設定している施設ですので、少しだけであれば可能です！`, en: `Hi\n\nThank you for your inquiry.\n\nSince our facility already has relatively low rates, we can accommodate a small adjustment!`, flow: "値引き額は500円目安。大きい金額は使わない。オプション無料でレビュー満点を狙う場合あり。", flowImage: null },
-      { id: 2, category: "チェックイン", tag: "共通", title: "チェックイン時間の問い合わせ", itemType: "テンプレ", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n当施設にフロントはなくセルフチェックインとなりますので、16:00以降はいつでも大丈夫です。\nチェックインの詳細につきましてはマニュアルに記載しておりますので、必ず事前にご確認お願いいたします。\nhttps://マニュアルURL`, en: `Hi,\n\nYou can check in anytime after 16:00 by yourself.`, flow: "", flowImage: null }
+      { id: 1, category: "予約前", itemType: "テンプレ", title: "スペシャルオファー", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n元から料金を比較的安く設定している施設ですので、少しだけであれば可能です！`, en: `Hi\n\nThank you for your inquiry.\n\nSince our facility already has relatively low rates, we can accommodate a small adjustment!`, flow: "値引き額は500円目安。大きい金額は使わない。オプション無料でレビュー満点を狙う場合あり。", flowImage: null },
+      { id: 2, category: "マニュアル未読", itemType: "流れ", title: "マニュアル未読 チェックの流れ", ja: "", en: "", flow: "1. ゲスト一覧から未読者を抽出する\n2. 2日前になっても未入力の場合は催促①を送信\n3. 前日になっても未入力の場合は催促②を送信", flowImage: null },
+      { id: 3, category: "マニュアル未読", itemType: "テンプレ", title: "ハウスルール未同意 催促①", ja: `お世話になっております。\n\n宿泊者名簿のご入力ありがとうございます。\nまだハウスルールの同意が完了していないようです。`, en: `Hello!\n\nThank you for filling out the guest list.\nBut it looks like you haven't yet agreed to the house rules.`, flow: "", flowImage: null },
+      { id: 4, category: "マニュアル未読", itemType: "テンプレ", title: "催促②", ja: `※重要お知らせ※\nこんにちは。\n\nURLは確認されましたか？`, en: `※Important Notice※\nHello.\n\nHave you checked the URL?`, flow: "", flowImage: null },
+      { id: 5, category: "マニュアル未読", itemType: "テンプレ", title: "催促①（セルフチェックイン案内）", ja: `※セルフチェックインのご案内※\nこの度は当施設をご予約いただきありがとうございます。`, en: `※Self Check-in Information※\n\nThank you for booking with us.`, flow: "", flowImage: null },
+      { id: 6, category: "URLが見れない", itemType: "テンプレ", title: "メールアドレス確認・再送依頼", ja: `お問い合わせありがとうございます。\n稀にセキュリティ上、URLが弾かれてしまいURLが消えてしまいます。`, en: `If you made a reservation through an affiliate site such as Agoda, the URL may be deleted.`, flow: "", flowImage: null }
     ];
 
     const INITIAL_CATEGORIES = [
       { name: "📝 予約〜チェックイン前", parent: null, type: "section" },
       { name: "予約前", parent: "📝 予約〜チェックイン前", type: "folder" },
       { name: "マニュアル未読", parent: "📝 予約〜チェックイン前", type: "folder" },
-      { name: "🏨 チェックイン・滞在中", parent: null, type: "section" },
-      { name: "チェックイン", parent: "🏨 チェックイン・滞在中", type: "folder" },
-      { name: "その他", parent: null, type: "folder" }
+      { name: "URLが見れない", parent: "📝 予約〜チェックイン前", type: "folder" }
     ];
 
-    const TAG_COLORS = { "Airbnb": "#FF5A5F", "Booking.com": "#003580", "Agoda": "#5392F9", "共通": "#4A7C6F", "NTH": "#8B5E3C", "全施設": "#555" };
-    function tagColor(tag) { return Object.keys(TAG_COLORS).find(k => tag.includes(k)) ? TAG_COLORS[Object.keys(TAG_COLORS).find(k => tag.includes(k))] : "#666"; }
+    // ★ 種類ごとの色設定（テンプレ＝いつもの緑、流れ＝注意を促すオレンジ）
+    const TYPE_COLORS = {
+      "テンプレ": "#4A7C6F",
+      "流れ": "#f0a500"
+    };
 
     function CopyBtn({ text }) {
       const [copied, setCopied] = useState(false);
@@ -77,17 +77,14 @@
     }
 
     // ＝＝＝ テンプレート（ファイル）コンポーネント ＝＝＝
-    function TemplateCard({ t, categories, itemTypes, onUpdate, onDelete }) {
+    function TemplateCard({ t, onUpdate, onDelete }) {
       const [open, setOpen] = useState(false);
       const [lang, setLang] = useState("ja"); 
       const [isEditing, setIsEditing] = useState(false);
       const [editData, setEditData] = useState({ ...t });
 
-      const currentTypeObj = useMemo(() => {
-        return itemTypes.find(type => type.name === (t.itemType || "テンプレ")) || itemTypes[0];
-      }, [itemTypes, t.itemType]);
-
-      const viewMode = currentTypeObj ? currentTypeObj.viewMode : "text";
+      // ファイルの種類（テンプレ or 流れ）
+      const viewMode = t.itemType === "流れ" ? "flow" : "text";
 
       useEffect(() => {
         if (viewMode === "flow") { setLang("flow"); } 
@@ -131,31 +128,27 @@
                 <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>タイトル</label>
                 <input type="text" value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
               </div>
-              <div style={{ width: "120px" }}>
-                <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>タグ</label>
-                <input type="text" value={editData.tag} onChange={e => setEditData({...editData, tag: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
-              </div>
+              {/* ★ここを「タグ」から「項目タイプ（プルダウン）」へ変更しました！ */}
               <div style={{ width: "140px" }}>
                 <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>項目タイプ</label>
-                <select value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", background: "#fff" }}>
-                  {itemTypes.map(type => (
-                    <option key={type.id} value={type.name}>{type.name}</option>
-                  ))}
+                <select value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", background: "#fff", fontWeight: "bold" }}>
+                  <option value="テンプレ">テンプレ</option>
+                  <option value="流れ">流れ</option>
                 </select>
               </div>
             </div>
             
             <div style={{ marginBottom: 12 }}>
               <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>🇯🇵 日本語 テンプレート</label>
-              <textarea value={editData.ja} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ width: "100%", height: "100px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
+              <textarea value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ width: "100%", height: "100px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 12 }}>
               <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>🇬🇧 English テンプレート</label>
-              <textarea value={editData.en} onChange={e => setEditData({...editData, en: e.target.value})} style={{ width: "100%", height: "80px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
+              <textarea value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ width: "100%", height: "80px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 16, background: "#fffbf0", padding: "10px", borderRadius: 6, border: "1px solid #f0e6d2" }}>
               <label style={{ fontSize: 11, color: "#7a5800", fontWeight: 700, display: "block", marginBottom: 6 }}>📋 対応の流れ・注意事項</label>
-              <textarea value={editData.flow} onChange={e => setEditData({...editData, flow: e.target.value})} style={{ width: "100%", height: "60px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box", marginBottom: 8 }} />
+              <textarea value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} style={{ width: "100%", height: "60px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box", marginBottom: 8 }} />
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <input type="file" accept="image/*" onChange={handleImageUpload} id={`file-${t.id}`} style={{ display: "none" }} />
                 <label htmlFor={`file-${t.id}`} style={{ background: "#fff", border: "1px solid #ccc", padding: "4px 10px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontWeight: 600 }}>📷 画像を選択</label>
@@ -174,12 +167,13 @@
         <div draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"} style={{ background: "#fff", borderRadius: 10, border: "1px solid #e8e8e8", marginBottom: 10, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
           <div onClick={() => setOpen(!open)} style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none", background: open ? "#fafafa" : "#fff" }}>
             <span style={{ fontSize: 16, cursor: "grab", color: "#ccc" }}>☰</span>
-            <span style={{ background: tagColor(t.tag), color: "#fff", borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{t.tag}</span>
-            <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{t.title}</span>
             
-            <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: viewMode === "flow" ? "#fffbf0" : "#f0f0f4", color: viewMode === "flow" ? "#b78103" : "#666", fontWeight: "bold", border: viewMode === "flow" ? "1px solid #f0a500" : "1px solid #ddd" }}>
+            {/* ★ここが「テンプレ」か「流れ」のバッジに切り替わります！ */}
+            <span style={{ background: TYPE_COLORS[t.itemType || "テンプレ"], color: "#fff", borderRadius: 4, padding: "2px 12px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
               {t.itemType || "テンプレ"}
             </span>
+            
+            <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{t.title}</span>
 
             <div style={{ display: "flex", gap: 6 }} onClick={e => e.stopPropagation()}>
               <button onClick={() => { setEditData({...t}); setIsEditing(true); setOpen(true); }} style={{ background: "#ebedf3", border: "none", color: "#555", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>✏️ 編集</button>
@@ -191,18 +185,19 @@
           {open && (
             <div style={{ padding: "0 16px 14px", borderTop: "1px solid #f0f0f0" }}>
               {viewMode === "flow" ? (
+                // ▼ 「流れ」モード：日本語英語は非表示で、対応の流れだけを表示
                 <div style={{ marginTop: 12 }}>
-                  <div style={{ fontSize: 11, color: "#7a5800", fontWeight: "bold", marginBottom: 4 }}>📋 対応の流れ・社内マニュアル</div>
                   <pre style={{ background: "#fffbf0", border: "1px solid #f0e6d2", borderRadius: 6, padding: "12px 14px", fontSize: 13, lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "#222", fontFamily: "inherit" }}>
                     {t.flow || "（流れのテキストは登録されていません）"}
                   </pre>
                   {t.flowImage && (
-                    <div style={{ marginTop: 12, textAlignment: "center" }}>
+                    <div style={{ marginTop: 12, textAlign: "center" }}>
                       <img src={t.flowImage} style={{ maxWidth: "100%", maxHeight: "300px", borderRadius: "6px" }} />
                     </div>
                   )}
                 </div>
               ) : (
+                // ▼ 「テンプレ」モード：日本語・英語のみ表示（対応の流れは非表示）
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, marginBottom: 8 }}>
                     <button onClick={() => setLang("ja")} style={{ padding: "4px 14px", borderRadius: 20, border: "1.5px solid", borderColor: lang === "ja" ? "#1a1a2e" : "#ddd", background: lang === "ja" ? "#1a1a2e" : "#fff", color: lang === "ja" ? "#fff" : "#555", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>🇯🇵 日本語</button>
@@ -221,7 +216,7 @@
     }
 
     // ＝＝＝ フォルダ（大項目）＆ 区切り線 コンポーネント ＝＝＝
-    function FolderSection({ catObj, categories, templates, itemTypes, onMoveTemplate, onMoveFolder, onReorderCategory, onRenameCat, onDeleteCat, onAddTemplate, onUpdateTemplate, onDeleteTemplate, level = 0 }) {
+    function FolderSection({ catObj, categories, templates, onMoveTemplate, onMoveFolder, onReorderCategory, onRenameCat, onDeleteCat, onAddTemplate, onUpdateTemplate, onDeleteTemplate, level = 0 }) {
       const catName = catObj.name;
       const [isOpen, setIsOpen] = useState(true);
       const [isEditingName, setIsEditingName] = useState(false);
@@ -237,7 +232,8 @@
         return (
           <div style={{ marginTop: 80, marginBottom: 24 }}>
             <DropZone onDrop={(draggedName) => onReorderCategory(draggedName, catName)} label="ここに移動" />
-            <div draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "3px solid #1a1a2e", paddingBottom: "8px", marginBottom: "16px", cursor: "grab" }}>
+            <div draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "3px solid #1a1a2e", paddingBottom: "8px", marginBottom: "16px", cursor: "grab" }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 16, color: "#ccc" }}>☰</span>
                 {isEditingName ? (
@@ -251,10 +247,15 @@
                 <button onClick={() => onDeleteCat(catName)} style={{ background: "transparent", border: "1px solid #fca5a5", color: "#c62828", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>🗑️ 削除</button>
               </div>
             </div>
+            
             <div style={{ paddingLeft: "8px" }}>
-              {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} itemTypes={itemTypes} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} level={level + 1} />)}
-              {childFolders.length > 0 && <DropZone onDrop={(draggedName) => onMoveFolder(draggedName, catName)} label="の一番下に移動" />}
-              {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} itemTypes={itemTypes} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} />)}
+              {childFolders.map(childCat => (
+                <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} level={level + 1} />
+              ))}
+              {childFolders.length > 0 && (
+                <DropZone onDrop={(draggedName) => onMoveFolder(draggedName, catName)} label="この区切りの一番下に移動" />
+              )}
+              {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} />)}
             </div>
           </div>
         );
@@ -263,6 +264,7 @@
       return (
         <div style={{ marginBottom: 12, marginLeft: level > 0 ? "24px" : "0" }}>
           <DropZone onDrop={(draggedName) => onReorderCategory(draggedName, catName)} label="上に移動" />
+          
           <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #dcdce6", overflow: "hidden", borderLeft: level > 0 ? "4px solid #1a1a2e" : "1px solid #dcdce6" }}>
             <div draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} style={{ padding: "10px 16px", background: isOpen ? "#f0f1f5" : "#fff", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: isOpen ? "1px solid #dcdce6" : "none", cursor: "grab" }}>
               <div onClick={() => { if (!isEditingName) setIsOpen(!isOpen); }} style={{ flex: 1, display: "flex", alignItems: "center", cursor: "pointer", userSelect: "none" }}>
@@ -283,8 +285,8 @@
             </div>
             {isOpen && (
               <div style={{ padding: "16px", background: "#f8f9fa" }}>
-                {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} itemTypes={itemTypes} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} level={level + 1} />)}
-                {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} itemTypes={itemTypes} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} />)}
+                {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} level={level + 1} />)}
+                {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} />)}
               </div>
             )}
           </div>
@@ -296,19 +298,9 @@
     function App() {
       const [categories, setCategories] = useState(null); 
       const [templates, setTemplates] = useState(null);
-      const [itemTypes, setItemTypes] = useState(null); 
       const [search, setSearch] = useState("");
-      const [showTypeManager, setShowTypeManager] = useState(false);
-      const [newTypeName, setNewTypeName] = useState("");
-      const [newTypeMode, setNewTypeMode] = useState("text");
-
-      // ★ 修正箇所：Reactのフックの設計ルールに従い、すべてを安全に読み込みます
+      
       useEffect(() => {
-        const unsubTypes = db.collection('mailApp').doc('itemTypes').onSnapshot(doc => {
-          if (doc.exists) { setItemTypes(doc.data().data); } 
-          else { db.collection('mailApp').doc('itemTypes').set({ data: INITIAL_ITEM_TYPES }); }
-        });
-
         const unsubCat = db.collection('mailApp').doc('categories').onSnapshot(doc => {
           if (doc.exists) { setCategories(doc.data().data); } 
           else { db.collection('mailApp').doc('categories').set({ data: INITIAL_CATEGORIES }); }
@@ -323,14 +315,13 @@
             setTemplates(temps);
           }
         });
-        return () => { unsubTypes(); unsubCat(); unsubTemp(); };
+        return () => { unsubCat(); unsubTemp(); };
       }, []);
 
-      // 検索フィルタ用
       const searchResultTemplates = useMemo(() => {
         if (!search || !templates) return []; 
         const q = search.toLowerCase();
-        return templates.filter(t => t.title.toLowerCase().includes(q) || t.ja.toLowerCase().includes(q) || t.en.toLowerCase().includes(q) || t.tag.toLowerCase().includes(q) || (t.flow && t.flow.toLowerCase().includes(q)));
+        return templates.filter(t => t.title.toLowerCase().includes(q) || (t.ja && t.ja.toLowerCase().includes(q)) || (t.en && t.en.toLowerCase().includes(q)) || (t.flow && t.flow.toLowerCase().includes(q)));
       }, [templates, search]);
 
       const rootFolders = useMemo(() => {
@@ -338,35 +329,18 @@
         return categories.filter(c => c.parent === null);
       }, [categories]);
 
-      // クラウドと通信できるまではローディング画面
-      if (!categories || !templates || !itemTypes) {
+      if (!categories || !templates) {
         return (
           <div style={{textAlign: "center", marginTop: "100px", color: "#666", fontWeight: "bold", fontFamily: "sans-serif"}}>
-            ☁️ クラウド同期中...<br/>
-            <span style={{fontSize: 12, fontWeight: "normal", display: "block", marginTop: 10}}>（フリーズしている場合はFirebaseの「テストモード」の設定を確認してください）</span>
+            ☁️ クラウド同期中...
           </div>
         );
       }
 
       const updateCats = (newCats) => db.collection('mailApp').doc('categories').set({ data: newCats });
-      const updateTypes = (newTypes) => db.collection('mailApp').doc('itemTypes').set({ data: newTypes });
-
-      const handleAddItemType = () => {
-        if(!newTypeName.trim()) return;
-        if(itemTypes.some(t => t.name === newTypeName.trim())) { alert("既に同じ名前の種類が存在します。"); return; }
-        const nextTypes = [...itemTypes, { id: Date.now().toString(), name: newTypeName.trim(), viewMode: newTypeMode }];
-        updateTypes(nextTypes);
-        setNewTypeName("");
-      };
-
-      const handleDeleteItemType = (id, name) => {
-        if(name === "テンプレ" || name === "流れ") { alert("基本の種類は削除できません。"); return; }
-        if(!confirm(`「${name}」の種類を削除しますか？`)) return;
-        updateTypes(itemTypes.filter(t => t.id !== id));
-      };
-
       const handleUpdateTemplate = (updatedT) => db.collection('mailTemplates').doc(updatedT.id.toString()).set(updatedT);
       const handleDeleteTemplate = (id) => db.collection('mailTemplates').doc(id.toString()).delete();
+      
       const handleAddCategory = (type) => {
         const name = prompt(`新しい${type === "section" ? "区切り線" : "フォルダ"}の名前を入力してください`);
         if (!name || !name.trim()) return;
@@ -387,7 +361,7 @@
 
       const handleAddTemplate = (catName) => {
         const newId = templates.length > 0 ? Math.max(...templates.map(t => t.id)) + 1 : 1;
-        db.collection('mailTemplates').doc(newId.toString()).set({ id: newId, category: catName, tag: "共通", title: "新規ファイル", itemType: "テンプレ", ja: "", en: "", flow: "", flowImage: null });
+        db.collection('mailTemplates').doc(newId.toString()).set({ id: newId, category: catName, itemType: "テンプレ", title: "新規ファイル", ja: "", en: "", flow: "", flowImage: null });
       };
 
       const handleMoveTemplate = (id, targetCategory) => db.collection('mailTemplates').doc(id.toString()).update({ category: targetCategory });
@@ -412,7 +386,6 @@
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: ".02em" }}>📨 クラウドメール管理システム</h1>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => setShowTypeManager(!showTypeManager)} style={{ background: showTypeManager ? "#f0a500" : "transparent", color: "#fff", border: "1px solid #fff", padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>⚙️ 項目タイプを編集</button>
                   <button onClick={() => handleAddCategory("folder")} style={{ background: "transparent", color: "#4fc3f7", border: "1px solid #4fc3f7", padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>📂 フォルダ追加</button>
                   <button onClick={() => handleAddCategory("section")} style={{ background: "transparent", color: "#f0a500", border: "1px solid #f0a500", padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>➖ 区切り線</button>
                 </div>
@@ -422,40 +395,19 @@
           </div>
 
           <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 12px 60px" }}>
-            {showTypeManager && (
-              <div style={{ background: "#fff", padding: "16px", borderRadius: 10, marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,.1)", border: "1px solid #ddd" }}>
-                <h3 style={{ margin: "0 0 12px", fontSize: 14 }}>⚙️ ファイル種類（項目タイプ）の追加・管理</h3>
-                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-                  <input type="text" placeholder="新しい種類の名前（例：チェックリスト、注意点）" value={newTypeName} onChange={e => setNewTypeName(e.target.value)} style={{ flex: 1, padding: "8px", borderRadius: 6, border: "1px solid #ccc" }} />
-                  <select value={newTypeMode} onChange={e => setNewTypeMode(e.target.value)} style={{ padding: "8px", borderRadius: 6, border: "1px solid #ccc", background: "#fff" }}>
-                    <option value="text">テンプレと同じ（日本語・英語）</option>
-                    <option value="flow">流れと同じ（対応の流れのみ）</option>
-                  </select>
-                  <button onClick={handleAddItemType} style={{ background: "#2E7D32", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 6, fontWeight: "bold", cursor: "pointer" }}>➕ タイプを作成</button>
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {itemTypes.map(type => (
-                    <div key={type.id} style={{ background: "#f0f1f5", padding: "4px 12px", borderRadius: 20, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-                      <span>{type.name} ({type.viewMode === "flow" ? "流れ表示" : "テンプレ表示"})</span>
-                      {type.name !== "テンプレ" && type.name !== "流れ" && (
-                        <button onClick={() => handleDeleteItemType(type.id, type.name)} style={{ background: "none", border: "none", color: "red", cursor: "pointer", fontWeight: "bold" }}>✖</button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {search ? (
               <div>
                 <p style={{ fontSize: 13, color: "#666", marginBottom: 12 }}>検索結果: {searchResultTemplates.length} 件</p>
-                {searchResultTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} itemTypes={itemTypes} onUpdate={handleUpdateTemplate} onDelete={handleDeleteTemplate} />)}
+                {searchResultTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} onUpdate={handleUpdateTemplate} onDelete={handleDeleteTemplate} />)}
               </div>
             ) : (
               <div>
                 {rootFolders.map(cat => (
-                  <FolderSection key={cat.name} catObj={cat} categories={categories} templates={templates} itemTypes={itemTypes} onMoveTemplate={handleMoveTemplate} onMoveFolder={handleMoveFolder} onReorderCategory={handleReorderCategory} onRenameCat={handleRenameCategory} onDeleteCat={handleDeleteCategory} onAddTemplate={handleAddTemplate} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} level={0} />
+                  <FolderSection key={cat.name} catObj={cat} categories={categories} templates={templates} onMoveTemplate={handleMoveTemplate} onMoveFolder={handleMoveFolder} onReorderCategory={handleReorderCategory} onRenameCat={handleRenameCategory} onDeleteCat={handleDeleteCategory} onAddTemplate={handleAddTemplate} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} level={0} />
                 ))}
+                <DropZone onDrop={(draggedName) => {
+                  const arr = [...categories]; const dIdx = arr.findIndex(c => c.name === draggedName); const obj = arr.splice(dIdx, 1)[0]; obj.parent = null; arr.push(obj); updateCats(arr);
+                }} label="一番下に移動" />
               </div>
             )}
           </div>
