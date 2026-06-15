@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メールテンプレート管理システム</title>
+  <title>メールテンプレート管理システム（和モダンデザイン版）</title>
   
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -14,19 +14,23 @@
 
   <style>
     :root {
-      --bg-color: #F9FAFB;         /* 優しい背景色 */
+      --bg-color: #F8F4E1;         /* 暖かみのある和の背景（白練） */
       --card-bg: #FFFFFF;          /* カードの背景 */
-      --text-main: #111827;        /* メインテキスト */
-      --text-muted: #6B7280;       /* サブテキスト */
-      --primary: #2563EB;          /* メインの青色 */
-      --primary-hover: #1D4ED8;
-      --border: #E5E7EB;           /* 優しい境界線 */
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --text-main: #2B2B2B;        /* 柔らかい墨色 */
+      --text-muted: #7A7A7A;       /* サブテキスト */
+      --primary: #1A237E;          /* 重厚な紺青 */
+      --primary-hover: #121A4B;
+      --border: #E6E1D3;           /* 和紙のような境界線（砂色） */
+      --border-strong: #C2B280;    /* 強い境界線（濃い砂色） */
+      
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1), 0 6px 12px rgba(0, 0, 0, 0.08);
+      
       --radius-md: 8px;
       --radius-lg: 12px;
     }
+    
     body {
       margin: 0; padding: 0;
       background-color: var(--bg-color);
@@ -34,83 +38,95 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
-    /* ヘッダー */
+    
+    /* 和モダン ヘッダー */
     .app-header {
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.98);
       backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--border);
-      padding: 16px 24px;
+      padding: 18px 28px;
       position: sticky; top: 0; z-index: 100;
       box-shadow: var(--shadow-sm);
     }
-    .app-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); }
-    
-    /* 検索バー */
-    .search-input {
-      width: 100%; padding: 12px 16px; border-radius: var(--radius-md);
-      border: 1px solid var(--border); background: #F3F4F6;
-      font-size: 15px; outline: none; transition: all 0.2s;
+    .app-title {
+      margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-main);
     }
-    .search-input:focus { background: #fff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
     
-    /* 汎用ボタン */
+    /* 検索バー（和のトーン） */
+    .search-input {
+      width: 100%; padding: 12px 18px; border-radius: var(--radius-md);
+      border: 1px solid var(--border); background: #FAF7F0;
+      font-size: 16px; outline: none; transition: all 0.2s;
+    }
+    .search-input:focus { background: #fff; border-color: var(--border-strong); box-shadow: 0 0 0 3px rgba(194, 178, 128, 0.15); }
+    
+    /* 汎用ボタン（メリハリと和の色） */
     .btn {
-      display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
-      border-radius: var(--radius-md); font-size: 14px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+      border-radius: var(--radius-md); font-size: 15px; font-weight: 600;
       cursor: pointer; transition: all 0.2s ease; outline: none; border: 1px solid transparent;
     }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
     .btn-outline { background: #fff; border-color: var(--border); color: var(--text-main); }
-    .btn-outline:hover { background: #F9FAFB; border-color: #D1D5DB; }
-    .btn-ghost { background: transparent; color: var(--text-muted); padding: 6px 12px; }
-    .btn-ghost:hover { background: #F3F4F6; color: var(--text-main); }
-    .btn-danger-ghost { background: transparent; color: #EF4444; padding: 6px 12px; }
+    .btn-outline:hover { background: #FDF9F0; border-color: var(--border-strong); }
+    
+    /* プロっぽいゴーストボタン */
+    .btn-ghost { background: transparent; color: var(--text-muted); padding: 8px 14px; }
+    .btn-ghost:hover { background: #F5F1E6; color: var(--text-main); }
+    .btn-danger-ghost { background: transparent; color: #EF4444; padding: 8px 14px; }
     .btn-danger-ghost:hover { background: #FEF2F2; }
 
-    /* フォーム要素 */
-    .form-label { display: block; font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 6px; }
+    /* フォーム要素（和モダン） */
+    .form-label { display: block; font-size: 13px; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
     .form-control {
-      width: 100%; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border);
-      font-size: 15px; font-family: inherit; box-sizing: border-box; transition: all 0.2s;
+      width: 100%; padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border);
+      font-size: 16px; font-family: inherit; box-sizing: border-box; transition: all 0.2s;
     }
-    .form-control:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .form-control:focus { border-color: var(--border-strong); outline: none; box-shadow: 0 0 0 3px rgba(194, 178, 128, 0.15); }
     
-    /* カード（ファイル・フォルダ） */
+    /* 和モダン カード（ファイル・フォルダ） */
     .card {
       background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border);
-      box-shadow: var(--shadow-sm); transition: all 0.2s ease; margin-bottom: 12px; overflow: hidden;
+      box-shadow: var(--shadow-sm); transition: all 0.3s ease; margin-bottom: 16px; overflow: hidden;
     }
-    .card:hover { box-shadow: var(--shadow-md); border-color: #D1D5DB; }
-    .card-target { border: 2px solid var(--primary); box-shadow: 0 0 0 4px rgba(37,99,235,0.15); }
-    .card-header { padding: 14px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
-    .card-header:hover { background: #F9FAFB; }
-    .card-body { padding: 0 20px 20px; border-top: 1px solid var(--border); }
+    /* ホバー時の柔らかい浮遊感 */
+    .card:hover { box-shadow: var(--shadow-lg); border-color: var(--border-strong); transform: translateY(-2px); }
+    .card-target { border: 2px solid var(--primary); box-shadow: 0 0 0 5px rgba(26, 35, 126, 0.1); }
+    .card-header { padding: 16px 24px; display: flex; align-items: center; gap: 14px; cursor: pointer; user-select: none; }
+    .card-header:hover { background: #FDF9F0; }
+    .card-body { padding: 0 24px 24px; border-top: 1px solid var(--border); }
     
-    /* ドラッグハンドル */
-    .drag-handle { color: #D1D5DB; cursor: grab; font-size: 16px; padding: 4px; }
-    .drag-handle:hover { color: #9CA3AF; }
+    /* ドラッグハンドル（柔らかい墨色） */
+    .drag-handle { color: #DCD6C8; cursor: grab; font-size: 18px; padding: 4px; transition: color 0.2s; }
+    .drag-handle:hover { color: var(--text-muted); }
 
-    /* バッジ */
-    .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
-    .badge-template { background: #EFF6FF; color: #1E40AF; border: 1px solid #DBEAFE; }
-    .badge-flow { background: #FFFBEB; color: #B45309; border: 1px solid #FEF3C7; }
+    /* 日本の伝統色バッジ */
+    .badge { padding: 6px 14px; border-radius: 24px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+    /* 日本の伝統色（薄藍、薄卵） */
+    .badge-template { background: #E8EAF6; color: #1A237E; border: 1px solid #C5CAE9; }
+    .badge-flow { background: #FFF3E0; color: #F57C00; border: 1px solid #FFE0B2; }
 
-    /* セクション区切り */
-    .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #E5E7EB; padding-bottom: 12px; margin-bottom: 20px; cursor: grab; }
-    .section-title { font-size: 22px; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em; }
+    /* 和モダン セクション区切り */
+    .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--border-strong); padding-bottom: 16px; margin-bottom: 24px; cursor: grab; }
+    .section-title { font-size: 26px; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em; }
     
-    /* リンクテキスト */
+    /* ファイル間リンク（和のアクセント） */
     .link-btn {
-      background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; border-radius: 6px;
-      padding: 4px 10px; margin: 0 4px; font-size: 13px; font-weight: 600; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s; vertical-align: middle;
+      background: #FAF7F0; color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 12px; margin: 0 4px; font-size: 14px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; vertical-align: middle;
     }
-    .link-btn:hover { background: #E5E7EB; color: #111827; }
+    .link-btn:hover { background: var(--border); color: var(--text-main); }
 
-    /* プレ表示エリア */
-    .pre-area { background: #F9FAFB; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; font-size: 15px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; color: #374151; font-family: inherit; margin: 0; }
-    .flow-area { background: #FFFBEB; border: 1px solid #FEF3C7; }
+    /* 和モダン プレ表示エリア（和紙のような質感） */
+    .pre-area {
+      background: #FDF9F0; border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 20px 24px; font-size: 16px; line-height: 1.9; white-space: pre-wrap; word-break: break-word;
+      color: #373737; font-family: inherit; margin: 0; box-shadow: inset var(--shadow-sm);
+    }
+    /* 和モダン「流れ」表示エリア（和紙色） */
+    .flow-area { background: #FDF5E6; border: 1px solid var(--border); }
   </style>
 </head>
 <body>
@@ -131,6 +147,17 @@
     const db = firebase.firestore();
     const { useState, useMemo, useEffect } = React;
 
+    // ＝＝＝ 日本の伝統色タグ配色（茜、藍、若竹など） ＝＝＝
+    const TAG_COLORS = {
+      "Airbnb": "#B71C1C",       /* 茜色（あかねいろ） */
+      "Booking.com": "#0D47A1",  /* 藍色（あいいろ） */
+      "Agoda": "#42A5F5",        /* 空色（そらいろ：少し明るめ） */
+      "共通": "#2E7D32",         /* 若竹色（わかたけいろ） */
+      "全施設": "#555"           /* そのまま墨色 */
+    };
+    
+    function tagColor(tag) { return Object.keys(TAG_COLORS).find(k => tag.includes(k)) ? TAG_COLORS[Object.keys(TAG_COLORS).find(k => tag.includes(k))] : "#666"; }
+
     // --- コンポーネント群 ---
     function CopyBtn({ text }) {
       const [copied, setCopied] = useState(false);
@@ -150,9 +177,9 @@
           onDragOver={e => { e.preventDefault(); e.stopPropagation(); setIsOver(true); }}
           onDragLeave={e => { e.stopPropagation(); setIsOver(false); }}
           onDrop={e => { e.preventDefault(); e.stopPropagation(); setIsOver(false); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); if(data.type === 'category') onDrop(data.name); } catch(err){} }}
-          style={{ height: isOver ? "36px" : "12px", background: isOver ? "#EFF6FF" : "transparent", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", margin: "-6px 0", position: "relative", zIndex: 10, border: isOver ? "2px dashed #93C5FD" : "none" }}
+          style={{ height: isOver ? "36px" : "12px", background: isOver ? "#E8EAF6" : "transparent", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", margin: "-6px 0", position: "relative", zIndex: 10, border: isOver ? "2px dashed #C5CAE9" : "none" }}
         >
-          {isOver && <span style={{fontSize: 12, color: "#2563EB", fontWeight: "bold"}}>{label || "ここに移動"}</span>}
+          {isOver && <span style={{fontSize: 12, color: "#1A237E", fontWeight: "bold"}}>{label || "ここに移動"}</span>}
         </div>
       )
     }
@@ -168,7 +195,7 @@
             if (index % 2 === 1) {
               const targetId = Number(part);
               const targetTemplate = allTemplates.find(t => t.id === targetId);
-              const title = targetTemplate ? targetTemplate.title : `不明なファイル(ID:${targetId})`;
+              const title = targetTemplate ? targetTemplate.title : `不明ID:${targetId}`;
               return <button key={index} className="link-btn" onClick={() => onLinkClick(targetId)}>🔗 {title}</button>;
             }
             return <span key={index}>{part}</span>;
@@ -177,7 +204,7 @@
       );
     }
 
-    // ＝＝＝ テンプレート（ファイル） ＝＝＝
+    // ＝＝＝ ファイルカード（和モダン） ＝＝＝
     function TemplateCard({ t, categories, allTemplates, onUpdate, onDelete, onLinkClick, forceOpenId }) {
       const [open, setOpen] = useState(false);
       const [lang, setLang] = useState("ja"); 
@@ -210,20 +237,21 @@
       const handleSave = () => { onUpdate(editData); setIsEditing(false); };
       const handleDragStart = (e) => { if (isEditing) { e.preventDefault(); return; } e.dataTransfer.setData("text/plain", JSON.stringify({ type: "template", id: t.id })); e.stopPropagation(); e.currentTarget.style.opacity = "0.4"; };
 
+      // ＝＝ 和モダン 編集画面 ＝＝
       if (isEditing) {
         return (
-          <div className="card" style={{ border: "2px solid #2563EB", padding: "20px" }}>
-            <div style={{ marginBottom: 16, fontSize: "12px", color: "#B45309", fontWeight: "bold", background: "#FFFBEB", padding: "10px 14px", borderRadius: "8px" }}>
+          <div className="card card-target" style={{ padding: "24px" }}>
+            <div style={{ marginBottom: 12, fontSize: "13px", color: "#B45309", fontWeight: "bold", background: "#FFFBEB", padding: "10px 16px", borderRadius: "8px" }}>
               💡 別の「流れ」からここにリンクを繋ぐ場合は <span style={{background:"#fff", padding:"4px 8px", border:"1px solid #FEF3C7", borderRadius:6}}>[リンク:{t.id}]</span> と記入してください。
             </div>
             <div style={{ display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
-              <div style={{ flex: 2, minWidth: "250px" }}>
+              <div style={{ flex: 2, minWidth: "300px" }}>
                 <label className="form-label">タイトル</label>
                 <input type="text" className="form-control" value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} />
               </div>
-              <div style={{ width: "160px" }}>
+              <div style={{ width: "180px" }}>
                 <label className="form-label">項目タイプ</label>
-                <select className="form-control" value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})}>
+                <select className="form-control" value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})} style={{fontWeight: "bold"}}>
                   <option value="テンプレ">テンプレ</option><option value="流れ">流れ</option>
                 </select>
               </div>
@@ -233,28 +261,28 @@
               <React.Fragment>
                 <div style={{ marginBottom: 20 }}>
                   <label className="form-label">🇯🇵 日本語 テンプレート</label>
-                  <textarea className="form-control" value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ height: "240px", resize: "vertical" }} />
+                  <textarea className="form-control" value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ height: "260px", resize: "vertical", lineHeight: 1.6 }} />
                 </div>
-                <div style={{ marginBottom: 20 }}>
+                <div style={{ marginBottom: 24 }}>
                   <label className="form-label">🇬🇧 English テンプレート</label>
-                  <textarea className="form-control" value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ height: "180px", resize: "vertical" }} />
+                  <textarea className="form-control" value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ height: "200px", resize: "vertical", lineHeight: 1.6 }} />
                 </div>
               </React.Fragment>
             )}
 
             {editData.itemType === "流れ" && (
-              <div style={{ marginBottom: 24, background: "#FFFBEB", padding: "20px", borderRadius: "12px", border: "1px solid #FEF3C7" }}>
-                <label className="form-label" style={{ color: "#92400E" }}>📋 対応の流れ・社内マニュアル</label>
-                <textarea className="form-control" value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} style={{ height: "400px", resize: "vertical", marginBottom: 16 }} />
+              <div style={{ marginBottom: 28, background: "#FDF5E6", padding: "20px", borderRadius: "12px", border: "1px solid #FEF3C7" }}>
+                <label className="form-label" style={{ color: "#7a5800" }}>📋 対応の流れ・社内マニュアル（超広々エリア）</label>
+                <textarea className="form-control" value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} placeholder="ここに業務の流れを詳しくまとめてください。[リンク:ID] を書くと、テンプレへジャンプするボタンが作れます。" style={{ height: "450px", resize: "vertical", marginBottom: 16, fontSize: "16px", lineHeight: 1.7 }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <input type="file" accept="image/*" onChange={handleImageUpload} id={`file-${t.id}`} style={{ display: "none" }} />
                   <label htmlFor={`file-${t.id}`} className="btn btn-outline">📷 画像を添付</label>
-                  {editData.flowImage && <div style={{position:"relative"}}><img src={editData.flowImage} style={{ height: "50px", borderRadius: "6px", border: "1px solid #D1D5DB" }} /><button onClick={() => setEditData({...editData, flowImage: null})} style={{ position: "absolute", top: -8, right: -8, background: "#EF4444", color: "#fff", borderRadius: "50%", width: 20, height: 20, border: "none", cursor: "pointer", fontSize: 10 }}>✖</button></div>}
+                  {editData.flowImage && <div style={{position:"relative"}}><img src={editData.flowImage} style={{ height: "60px", borderRadius: "8px", border: "1px solid var(--border)" }} /><button onClick={() => setEditData({...editData, flowImage: null})} style={{ position: "absolute", top: -10, right: -10, background: "#EF4444", color: "#fff", borderRadius: "50%", width: 24, height: 24, border: "none", cursor: "pointer", fontSize: 12 }}>✖</button></div>}
                 </div>
               </div>
             )}
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 14 }}>
               <button className="btn btn-outline" onClick={() => setIsEditing(false)}>キャンセル</button>
               <button className="btn btn-primary" onClick={handleSave}>保存する</button>
             </div>
@@ -262,13 +290,14 @@
         );
       }
 
+      // ＝＝ 和モダン 閲覧画面 ＝＝
       return (
         <div id={`file-card-${t.id}`} className={`card ${forceOpenId === t.id ? 'card-target' : ''}`} draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"}>
           <div className="card-header" onClick={() => setOpen(!open)}>
             <span className="drag-handle">☰</span>
             <span className={`badge ${t.itemType === '流れ' ? 'badge-flow' : 'badge-template'}`}>{t.itemType || "テンプレ"}</span>
-            <span style={{ fontWeight: 600, fontSize: "16px", flex: 1, display: "flex", alignItems: "center", gap: "10px" }}>
-              {t.title} <span style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: "normal" }}>ID: {t.id}</span>
+            <span style={{ fontWeight: 600, fontSize: "17px", flex: 1, display: "flex", alignItems: "center", gap: "10px" }}>
+              {t.title} <span style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: "normal" }}>(ID: {t.id})</span>
             </span>
             <div style={{ display: "flex", gap: 8 }} onClick={e => e.stopPropagation()}>
               <button className="btn btn-ghost" onClick={() => { setEditData({...t}); setIsEditing(true); setOpen(true); }}>✏️ 編集</button>
@@ -280,17 +309,17 @@
           {open && (
             <div className="card-body">
               {viewMode === "flow" ? (
-                <div style={{ paddingTop: "16px" }}>
+                <div style={{ paddingTop: "18px" }}>
                   <pre className="pre-area flow-area">
                     <LinkableText text={t.flow} allTemplates={allTemplates} onLinkClick={onLinkClick} />
                   </pre>
-                  {t.flowImage && <div style={{ marginTop: 20, textAlign: "center" }}><img src={t.flowImage} style={{ maxWidth: "100%", maxHeight: "500px", borderRadius: "8px", border: "1px solid var(--border)" }} /></div>}
+                  {t.flowImage && <div style={{ marginTop: 24, textAlign: "center" }}><img src={t.flowImage} style={{ maxWidth: "100%", maxHeight: "500px", borderRadius: "10px", border: "1px solid var(--border)" }} /></div>}
                 </div>
               ) : (
-                <div style={{ paddingTop: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                    <button onClick={() => setLang("ja")} className={`btn ${lang === "ja" ? "btn-primary" : "btn-outline"}`} style={{borderRadius: 20}}>🇯🇵 日本語</button>
-                    <button onClick={() => setLang("en")} className={`btn ${lang === "en" ? "btn-primary" : "btn-outline"}`} style={{borderRadius: 20}}>🇬🇧 English</button>
+                <div style={{ paddingTop: "18px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+                    <button onClick={() => setLang("ja")} className={`btn ${lang === "ja" ? "btn-primary" : "btn-outline"}`} style={{borderRadius: 24}}>🇯🇵 日本語</button>
+                    <button onClick={() => setLang("en")} className={`btn ${lang === "en" ? "btn-primary" : "btn-outline"}`} style={{borderRadius: 24}}>🇬🇧 English</button>
                     <div style={{ marginLeft: "auto" }}><CopyBtn text={currentText} /></div>
                   </div>
                   <pre className="pre-area">
@@ -331,23 +360,23 @@
 
       if (catObj.type === "section") {
         return (
-          <div style={{ marginTop: 60, marginBottom: 32 }}>
+          <div style={{ marginTop: 60, marginBottom: 36 }}>
             <DropZone onDrop={(draggedName) => onReorderCategory(draggedName, catName)} label="ここに移動" />
             <div className="section-header" draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                 <span className="drag-handle">☰</span>
                 {isEditingName ? (
-                  <div style={{ display: "flex", gap: 8 }}><input type="text" className="form-control" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "250px", fontSize: "18px", fontWeight: "bold" }} /><button className="btn btn-primary" onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }}>保存</button></div>
+                  <div style={{ display: "flex", gap: 8 }}><input type="text" className="form-control" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "280px", fontSize: "20px", fontWeight: "bold" }} /><button className="btn btn-primary" onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }}>保存</button></div>
                 ) : (
                   <span className="section-title">{catName}</span>
                 )}
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 10 }}>
                 <button className="btn btn-outline" onClick={() => setIsEditingName(true)}>✏️</button>
-                <button className="btn btn-outline" style={{color: "var(--danger)"}} onClick={() => onDeleteCat(catName)}>🗑️</button>
+                <button className="btn btn-outline" style={{color: "#EF4444"}} onClick={() => onDeleteCat(catName)}>🗑️</button>
               </div>
             </div>
-            <div style={{ paddingLeft: "8px" }}>
+            <div style={{ paddingLeft: "12px" }}>
               {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} level={level + 1} />)}
               {childFolders.length > 0 && <DropZone onDrop={(draggedName) => onMoveFolder(draggedName, catName)} label="の一番下に移動" />}
               {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />)}
@@ -357,18 +386,18 @@
       }
 
       return (
-        <div style={{ marginBottom: 16, marginLeft: level > 0 ? "32px" : "0" }}>
+        <div style={{ marginBottom: 18, marginLeft: level > 0 ? "36px" : "0" }}>
           <DropZone onDrop={(draggedName) => onReorderCategory(draggedName, catName)} label="上に移動" />
-          <div className="card" style={{ borderLeft: level > 0 ? "4px solid var(--primary)" : "1px solid var(--border)" }}>
+          <div className="card" style={{ borderLeft: level > 0 ? "5px solid var(--primary)" : "1px solid var(--border)" }}>
             <div className="card-header" draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} onClick={() => { if (!isEditingName) setIsOpen(!isOpen); }}>
-              <span style={{ fontSize: 14, color: "var(--text-muted)", marginRight: 8, width: 16, display: "inline-block" }}>{isOpen ? "▼" : "▶"}</span>
-              <span style={{ fontSize: 20, marginRight: 8 }}>📂</span>
+              <span style={{ fontSize: 16, color: "var(--text-muted)", marginRight: 10, width: 16, display: "inline-block" }}>{isOpen ? "▼" : "▶"}</span>
+              <span style={{ fontSize: 22, marginRight: 8 }}>📂</span>
               {isEditingName ? (
-                <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: 8, flex: 1 }}><input type="text" className="form-control" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: "6px 12px" }} autoFocus /><button className="btn btn-primary" onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }}>保存</button></div>
+                <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: 8, flex: 1 }}><input type="text" className="form-control" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: "8px 14px" }} autoFocus /><button className="btn btn-primary" onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }}>保存</button></div>
               ) : (
-                <span style={{ fontSize: 16, fontWeight: 700, flex: 1 }}>{catName}</span>
+                <span style={{ fontSize: 17, fontWeight: 700, flex: 1, color: "var(--text-main)" }}>{catName}</span>
               )}
-              <div style={{ display: "flex", gap: 8 }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: "flex", gap: 10 }} onClick={e => e.stopPropagation()}>
                 {level > 0 && <button className="btn btn-outline" onClick={() => onMoveFolder(catName, null)}>⬆️ 外へ</button>}
                 <button className="btn btn-primary" onClick={() => { onAddTemplate(catName); setIsOpen(true); }}>➕ 追加</button>
                 <button className="btn btn-ghost" onClick={() => setIsEditingName(true)}>✏️</button>
@@ -376,10 +405,10 @@
               </div>
             </div>
             {isOpen && (
-              <div className="card-body" style={{ background: "#F9FAFB", paddingTop: "20px" }}>
+              <div className="card-body" style={{ background: "#FDF9F0", paddingTop: "24px" }}>
                 {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} level={level + 1} />)}
                 {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />)}
-                {childFolders.length === 0 && childTemplates.length === 0 && <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 13, padding: "20px", border: "1px dashed var(--border)", borderRadius: "8px", background: "#fff" }}>空のフォルダです</div>}
+                {childFolders.length === 0 && childTemplates.length === 0 && <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 14, padding: "24px", border: "1px dashed var(--border)", borderRadius: "10px", background: "#fff" }}>空のフォルダです。ここにテンプレを追加してください。</div>}
               </div>
             )}
           </div>
@@ -412,10 +441,10 @@
         setTimeout(() => {
           const element = document.getElementById(`file-card-${targetId}`);
           if (element) {
-            const y = element.getBoundingClientRect().top + window.scrollY - 120;
+            const y = element.getBoundingClientRect().top + window.scrollY - 130;
             window.scrollTo({ top: y, behavior: 'smooth' });
             setTimeout(() => setForceOpenId(null), 1500);
-          } else { alert("指定されたファイルが見つかりません。"); }
+          } else { alert("指定されたID:" + targetId + " のファイルが見つかりません。"); }
         }, 300);
       };
 
@@ -429,7 +458,7 @@
       }, [categories]);
 
       if (!categories || !templates) {
-        return <div style={{textAlign: "center", marginTop: "150px", color: "var(--text-muted)", fontSize: "16px", fontWeight: "bold"}}>☁️ システムを読み込み中...</div>;
+        return <div style={{textAlign: "center", marginTop: "150px", color: "var(--text-muted)", fontSize: "17px", fontWeight: "bold"}}>☁️ クラウド同期中...</div>;
       }
 
       const updateCats = (newCats) => db.collection('mailApp').doc('categories').set({ data: newCats });
@@ -492,7 +521,7 @@
           <main style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 24px 100px" }}>
             {search ? (
               <div>
-                <p style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 20, fontWeight: "bold" }}>検索結果: {searchResultTemplates.length} 件</p>
+                <p style={{ fontSize: 16, color: "var(--text-muted)", marginBottom: 24, fontWeight: "bold" }}>検索結果: {searchResultTemplates.length} 件</p>
                 {searchResultTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} allTemplates={templates} onUpdate={handleUpdateTemplate} onDelete={handleDeleteTemplate} onLinkClick={handleLinkClick} forceOpenId={forceOpenId} />)}
               </div>
             ) : (
@@ -505,7 +534,7 @@
                 }} label="一番下に移動" />
               </div>
             )}
-          </main>
+          </div>
         </div>
       );
     }
