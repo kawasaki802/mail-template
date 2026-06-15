@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メールテンプレート管理アプリ（ファイル間リンク・ジャンプ機能版）</title>
+  <title>メールテンプレート管理アプリ（リンク機能・完全修正版）</title>
   
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -71,28 +71,23 @@
       )
     }
 
-    // ★ テキスト内の [リンク:ID] を検知して、クリック可能なボタンに変えるマジックコンポーネント
+    // ★ リンク（[リンク:5]など）を自動でクリック可能なボタンに変換するコンポーネント
     function LinkableText({ text, allTemplates, onLinkClick }) {
       if (!text) return null;
-
-      // 「[リンク:数字]」というパターンを正規表現で探します
+      
       const regex = /\[リンク:(\d+)\]/g;
-      const parts = text.split(regex);
-      const matches = [...text.matchAll(regex)];
+      if (!regex.test(text)) return <React.Fragment>{text}</React.Fragment>;
 
-      if (matches.length === 0) return <span>{text}</span>;
+      const parts = text.split(/\[リンク:(\d+)\]/g);
 
-      let matchIndex = 0;
       return (
-        <span>
+        <React.Fragment>
           {parts.map((part, index) => {
-            // 奇数インデックスのときは、キャプチャされた「数字（ID）」が入っています
             if (index % 2 === 1) {
               const targetId = Number(part);
               const targetTemplate = allTemplates.find(t => t.id === targetId);
               const title = targetTemplate ? targetTemplate.title : `不明なファイル(ID:${targetId})`;
               
-              matchIndex++;
               return (
                 <button
                   key={index}
@@ -100,7 +95,8 @@
                   style={{
                     background: "#e1f5fe", color: "#0288d1", border: "1px solid #b3e5fc",
                     borderRadius: "4px", padding: "2px 6px", margin: "0 2px", fontSize: "12px",
-                    fontWeight: "bold", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3
+                    fontWeight: "bold", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3,
+                    verticalAlign: "middle"
                   }}
                   title="クリックしてこのファイルへジャンプ"
                 >
@@ -108,9 +104,9 @@
                 </button>
               );
             }
-            return part;
+            return <span key={index}>{part}</span>;
           })}
-        </span>
+        </React.Fragment>
       );
     }
 
@@ -123,11 +119,9 @@
 
       const viewMode = t.itemType === "流れ" ? "flow" : "text";
 
-      // 外部からのジャンプ命令（forceOpenId）が自分を指していたら、自動で開く！
+      // 外部からジャンプ命令が来たら自動で開く
       useEffect(() => {
-        if (forceOpenId === t.id) {
-          setOpen(true);
-        }
+        if (forceOpenId === t.id) { setOpen(true); }
       }, [forceOpenId, t.id]);
 
       useEffect(() => {
@@ -167,8 +161,8 @@
       if (isEditing) {
         return (
           <div style={{ background: "#fff", borderRadius: 10, border: "2px solid #f0a500", marginBottom: 10, padding: "16px", boxShadow: "0 4px 12px rgba(0,0,0,.1)" }}>
-            <div style={{ marginBottom: 4, fontSize: "11px", color: "#e65100", fontWeight: "bold" }}>
-              💡 別の「流れ」ファイルからここにリンクを繋ぐ場合は、文章内に <span style={{background:"#fffbf0", padding:"2px 4px", border:"1px solid #ffe082", borderRadius:4}}>[リンク:{t.id}]</span> と記入してください。
+            <div style={{ marginBottom: 8, fontSize: "11px", color: "#e65100", fontWeight: "bold", background: "#fffbf0", padding: "6px", borderRadius: "4px" }}>
+              💡 別の「流れ」ファイルからここにリンクを繋ぐ場合は、文章内に <span style={{background:"#fff", padding:"2px 4px", border:"1px solid #ffe082", borderRadius:4}}>[リンク:{t.id}]</span> と記入してください。
             </div>
             <div style={{ marginBottom: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
               <div style={{ flex: 2, minWidth: "200px" }}>
@@ -211,7 +205,7 @@
 
       return (
         <div 
-          id={`file-card-${t.id}`} // ★自動スクロールの目印用にIDを設置
+          id={`file-card-${t.id}`} // スクロール用の目印
           draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"} 
           style={{ 
             background: "#fff", borderRadius: 10, border: forceOpenId === t.id ? "2px solid #0288d1" : "1px solid #e8e8e8", 
@@ -221,14 +215,12 @@
         >
           <div onClick={() => setOpen(!open)} style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none", background: open ? "#fafafa" : "#fff" }}>
             <span style={{ fontSize: 16, cursor: "grab", color: "#ccc" }}>☰</span>
-            
             <span style={{ background: TYPE_COLORS[t.itemType || "テンプレ"], color: "#fff", borderRadius: 4, padding: "2px 12px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
               {t.itemType || "テンプレ"}
             </span>
-            
             <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>
-              {t.title} 
-              <span style={{ fontSize: "11px", color: "#aaa", fontWeight: "normal", marginLeft: "8px" }}>ID: {t.id}</span>
+              {t.title}
+              <span style={{ fontSize: "11px", color: "#aaa", fontWeight: "normal", marginLeft: "8px" }}>(ID: {t.id})</span>
             </span>
 
             <div style={{ display: "flex", gap: 6 }} onClick={e => e.stopPropagation()}>
@@ -241,7 +233,6 @@
           {open && (
             <div style={{ padding: "0 16px 14px", borderTop: "1px solid #f0f0f0" }}>
               {viewMode === "flow" ? (
-                // ▼ 「流れ」モードの表示（文章内のリンク記法を自動でボタンに変えて表示します）
                 <div style={{ marginTop: 12 }}>
                   <div style={{ background: "#fffbf0", border: "1px solid #f0e6d2", borderRadius: 6, padding: "12px 14px", fontSize: 13, lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "#222", fontFamily: "inherit" }}>
                     <LinkableText text={t.flow} allTemplates={allTemplates} onLinkClick={onLinkClick} />
@@ -253,7 +244,6 @@
                   )}
                 </div>
               ) : (
-                // ▼ 「テンプレ」モードの表示
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, marginBottom: 8 }}>
                     <button onClick={() => setLang("ja")} style={{ padding: "4px 14px", borderRadius: 20, border: "1.5px solid", borderColor: lang === "ja" ? "#1a1a2e" : "#ddd", background: lang === "ja" ? "#1a1a2e" : "#fff", color: lang === "ja" ? "#fff" : "#555", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>🇯🇵 日本語</button>
@@ -261,7 +251,7 @@
                     <div style={{ marginLeft: "auto" }}><CopyBtn text={currentText} /></div>
                   </div>
                   <pre style={{ background: "#f8f9fa", borderRadius: 6, padding: "12px 14px", fontSize: 13, lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "#222", maxHeight: 340, overflowY: "auto", fontFamily: "inherit" }}>
-                    {currentText || "（テキストはありません）"}
+                    <LinkableText text={currentText} allTemplates={allTemplates} onLinkClick={onLinkClick} />
                   </pre>
                 </div>
               )}
@@ -272,7 +262,8 @@
     }
 
     // ＝＝＝ フォルダ（大項目）＆ 区切り線 コンポーネント ＝＝＝
-    function FolderSection({ catObj, categories, templates, allTemplates, onMoveTemplate, onMoveFolder, onReorderCategory, onRenameCat, onDeleteCat, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId }) {
+    // ★ 修正箇所：引数に level = 0 を確実に追加し、ReferenceErrorを防止しました。
+    function FolderSection({ catObj, categories, templates, allTemplates, onMoveTemplate, onMoveFolder, onReorderCategory, onRenameCat, onDeleteCat, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, level = 0 }) {
       const catName = catObj.name;
       const [isOpen, setIsOpen] = useState(false);
       const [isEditingName, setIsEditingName] = useState(false);
@@ -281,16 +272,20 @@
       const childFolders = categories.filter(c => c.parent === catName);
       const childTemplates = templates.filter(t => t.category === catName);
 
-      // ★ジャンプ命令が飛んできた時、もしターゲットのファイルがこのフォルダ内に含まれていたら、フォルダを自動でパカッと開く！
+      // ジャンプ命令が来たら、ターゲットが含まれるフォルダを自動で開く
       const containsTarget = useMemo(() => {
         if (!forceOpenId) return false;
-        return childTemplates.some(t => t.id === forceOpenId) || childFolders.some(c => categories.some(sub => sub.category === c.name && sub.id === forceOpenId));
-      }, [forceOpenId, childTemplates, childFolders, categories]);
+        const checkContains = (folderName) => {
+          if (templates.some(t => t.category === folderName && t.id === forceOpenId)) return true;
+          const sub = categories.filter(c => c.parent === folderName);
+          for (const s of sub) { if (checkContains(s.name)) return true; }
+          return false;
+        };
+        return checkContains(catName);
+      }, [forceOpenId, templates, categories, catName]);
 
       useEffect(() => {
-        if (containsTarget) {
-          setIsOpen(true);
-        }
+        if (containsTarget) { setIsOpen(true); }
       }, [containsTarget]);
       
       const handleDragStart = (e) => { if (isEditingName) { e.preventDefault(); return; } e.dataTransfer.setData("text/plain", JSON.stringify({ type: "category", name: catName })); e.stopPropagation(); };
@@ -369,7 +364,6 @@
       const [templates, setTemplates] = useState(null);
       const [search, setSearch] = useState("");
       
-      // ★現在ジャンプ中のファイルIDを一時的に保持する状態
       const [forceOpenId, setForceOpenId] = useState(null);
       
       useEffect(() => {
@@ -390,22 +384,20 @@
         return () => { unsubCat(); unsubTemp(); };
       }, []);
 
-      // ★ リンクがクリックされた時のジャンプ＆自動スクロール処理！
+      // リンクがクリックされた時のジャンプ処理
       const handleLinkClick = (targetId) => {
         setForceOpenId(targetId);
         
-        // フォルダが開くまでのわずかなタイムラグを考慮して、0.2秒後にスクロールを実行
+        // フォルダが開くまでの時間を考慮してスクロール
         setTimeout(() => {
           const element = document.getElementById(`file-card-${targetId}`);
           if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // 一時的なジャンプ状態をリセット
             setTimeout(() => setForceOpenId(null), 1500);
           } else {
-            alert("ジャンプ先フォルダが閉じているか、見つかりません。もう一度クリックしてみてください！");
+            alert("指定されたファイルが見つかりません。");
           }
-        }, 250);
+        }, 300);
       };
 
       const searchResultTemplates = useMemo(() => {
