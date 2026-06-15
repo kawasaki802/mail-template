@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>メールテンプレート管理アプリ（クラウド・リアルタイム共有版）</title>
+  
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+</head>
+<body style="margin: 0; padding: 0; background: #f2f3f7;">
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // ★ Firebaseの初期化（いただいた鍵をセットしています）
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZ7v3kRjAsOGwYdUX_w0FKoGPLUhbR1VQ",
+      authDomain: "mail-template-68598.firebaseapp.com",
+      projectId: "mail-template-68598",
+      storageBucket: "mail-template-68598.firebasestorage.app",
+      messagingSenderId: "475374524236",
+      appId: "1:475374524236:web:b39a70aebc72bb4172e1e9"
+    };
+    
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    const { useState, useMemo, useEffect } = React;
+
+    // ★ 全54個のテンプレート（初期データ）
+    const INITIAL_TEMPLATES = [
+      { id: 1, category: "予約前", tag: "Airbnb", title: "スペシャルオファー", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n元から料金を比較的安く設定している施設ですので、少しだけであれば可能です！`, en: `Hi\n\nThank you for your inquiry.\n\nSince our facility already has relatively low rates, we can accommodate a small adjustment!`, flow: "値引き額は500円目安。大きい金額は使わない。オプション無料でレビュー満点を狙う場合あり。", flowImage: null },
+      { id: 2, category: "チェックイン", tag: "共通", title: "チェックイン時間の問い合わせ", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n当施設にフロントはなくセルフチェックインとなりますので、16:00以降はいつでも大丈夫です。\nチェックインの詳細につきましてはマニュアルに記載しておりますので、必ず事前にご確認お願いいたします。\nhttps://マニュアルURL\n\n何かご不明点やお困りごとがございましたら、いつでもお気軽にご連絡くださいませ。`, en: `Hi,\n\nThank you for your inquiry.\n\nYou can check in anytime after 16:00 by yourself, because we have no front desk there.\nPlease check the following link carefully, it's our house manual including Check-in details.\nhttps://マニュアルURL\n\nHave a nice trip :-)`, flow: "", flowImage: null },
+      { id: 3, category: "チェックイン", tag: "Booking.com", title: "時間外チェックインの返信", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n23時（22時）以降のチェックインは、メッセージやお電話でのサポートが出来かねます。\nご了承いただける場合は、23時（22時）以降のチェックインでも問題ございません。\n夜間のため、近隣住宅のご迷惑にならないようにお願いいたします。`, en: `Thank you for your message. We appreciate your inquiry.\n\nPlease note that we are unable to provide support via message or phone after 11:00 p.m. (10:00 p.m.).\nIf you understand and agree to this, checking in after 11:00 p.m. (10:00 p.m.) is not a problem.\nAs it will be late at night, we kindly ask that you avoid disturbing the neighboring residences.`, flow: "施設によってサポート終了時間が変わる点に注意。", flowImage: null },
+      { id: 4, category: "チェックイン", tag: "共通", title: "チェックイン方法の案内", ja: `ご連絡いただき、ありがとうございます。\nチェックインにつきましては、下記のURLを開いていただき、個人情報をご記入後、ハウスマニュアルにアクセスをお願いいたします。\n\nhttps://マニュアルURL\n\nご入力の際には、チェックボックスに必ずチェックのご入力をお願いいたします。\n（チェックを忘れるとフォームが提出できませんのでご注意ください。）\nまた、フォーム内で「赤い＊」がついている箇所のみ、入力していただければ結構です。\n\n何卒よろしくお願いいたします。`, en: `Thank you for contacting us.\nFor check-in, please open the URL below, fill in your personal information, and then access the house manual.\n\nhttps://マニュアルURL\n\nWhen filling out the form, please be sure to check the checkbox.\n(Please note that if you forget to check it, the form cannot be submitted.)\nAlso, only fields marked with a "red *" within the form require input.\n\nWe appreciate your cooperation.`, flow: "", flowImage: null },
+      { id: 5, category: "チェックイン", tag: "共通", title: "マニュアル入力完了の確認返信", ja: `ご連絡ありがとうございます。\n\n宿泊者名簿の入力が完了していることを確認しました。\nご対応いただきありがとうございます！\n\nチェックインの2日前から同じURLで、お部屋の入室方法が見れるようになります。\nその他ルールやアクセス方法などもご確認くださいませ。\nご不明点ございましたらお気軽にご連絡ください！`, en: `Thank you for contacting us!\n\nWe have confirmed that your guest registration has been completed.\n\nStarting two days before check-in, you will be able to view instructions on how to access your room at the same URL.\n\nPlease also review our other rules and access information. We hope you have a wonderful stay.`, flow: "", flowImage: null },
+      { id: 6, category: "チェックアウト", tag: "共通", title: "チェックアウト方法の確認", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\nチェックアウトの際は、鍵を取り出した場所に戻してください。\nチェックアウトのお時間は10時です。\n\n詳細につきましては、マニュアルにも記載しておりますので、ぜひご確認ください。\nhttps://マニュアルURL\n\n何かご不明点やお困りごとがございましたら、いつでもお気軽にご連絡くださいませ。`, en: `Hi,\n\nThank you for your inquiry.\n\nCheck-out is until 10:00 am. Please refer to the house manual for more details.\nhttps://マニュアルURL\n\nHave a nice day :-)`, flow: "", flowImage: null },
+      { id: 7, category: "チェックアウト", tag: "共通", title: "チェックアウト済みの連絡への返信", ja: `ご連絡ありがとうございます！\n\n今回のご滞在はご満足いただけましたでしょうか？\nよろしければ満点でレビューを投稿いただければスタッフ一同大変励みになります！\nまた機会がございましたら是非よろしくお願いいたします。\n\nどうぞお帰りはお気をつけてください！`, en: `Thank you for contacting us!\n\nWere you satisfied with your stay?\nIf you would like, please leave a perfect review as it will be a great encouragement to all our staff!\nWe hope to have the opportunity to stay with you again.\n\nPlease be careful on your way home!`, flow: "", flowImage: null },
+      { id: 8, category: "レビュー催促", tag: "MoZiビル以外", title: "アウト後送信①", ja: `この度は当ホテルにご宿泊いただき、誠にありがとうございました。\n\n（大阪）を満喫いただけましたでしょうか？\nお時間がありましたら、ぜひレビューで（大阪）の魅力を共有していただければ幸いです。\n\nチェックアウトの際には、お忘れ物のないようご注意ください。\n（大阪）には素敵なグルメスポットや観光スポットがたくさんありますので、またお越しいただける日を楽しみにしております。`, en: `Thank you very much for staying with us.\nDid you fully enjoy Osaka?\n\nIf you have some time, we would appreciate it if you could share the charm of Osaka in your review.\n\nWhen checking out, please make sure you haven't left any belongings behind.\nOsaka has many wonderful food spots and attractions, so we hope to welcome you again soon!`, flow: "10時〜10時半ごろに送信。（大阪）の部分は地域に合わせて変更。", flowImage: null },
+      { id: 9, category: "レビュー催促", tag: "MoZiビル以外", title: "アウト後送信②", ja: `この度は当ホテルにご宿泊いただき、誠にありがとうございました。\n\nご滞在は満喫いただけましたでしょうか？\nお時間がありましたら、ぜひレビューで今回のご旅行の魅力を共有していただければ幸いです。\n\nチェックアウトの際には、お忘れ物のないようご注意ください。\nまたお越しいただける日を心よりお待ちしております。`, en: `Thank you very much for staying at our hotel.\n\nWe hope you enjoyed your stay.\nIf you have a moment, we would greatly appreciate it if you could share the highlights of your trip by leaving us a review.\n\nWhen checking out, please be sure not to leave any personal belongings behind.\nWe sincerely look forward to welcoming you again in the future.`, flow: "", flowImage: null },
+      { id: 10, category: "レビュー催促", tag: "MoZiビル以外", title: "アウト後送信③（リクエスト有・レビュー希望）", ja: `「Airbnb・一休」は送信禁止\n\nこの度は当ホテルにご宿泊いただき、誠にありがとうございました。\n\nご滞在は満喫いただけましたでしょうか？\n\nチェックイン前にご案内しておりました（BBQ/アーリーチェックイン/荷物預かり）の件につきまして、レビュー投稿をお選びいただいておりましたので、お時間のある際で構いませんので、満点のレビュー投稿をお忘れなくお願いいたします。\n\nチェックアウトの際には、お忘れ物のないようご注意ください。\nまたお越しいただける日を心よりお待ちしております。`, en: "", flow: "Airbnb・一休には送信禁止。", flowImage: null },
+      { id: 11, category: "レビュー催促", tag: "MoZiビル以外", title: "リクエスト有・レビュー希望の追いかけ", ja: `先日は（BBQ／アーリーチェックイン／荷物預かり）をお申込いただき、ありがとうございました。\n皆さまにより快適にお過ごしいただけるよう、お申込みいただいたサービス向上の参考として、ぜひご滞在の感想をレビューとしてお寄せいただけますと幸いです。\n\nまだ、レビューをご投稿いただけていないようですので、お手すきの際にご協力いただけますと大変助かります。\n\n今後もより良いサービスを提供できるよう努めてまいりますので、何卒よろしくお願いいたします。`, en: "", flow: "", flowImage: null },
+      { id: 12, category: "レビュー催促", tag: "MoZiビル", title: "①新しく始めた施設なので～", ja: `この度はご宿泊いただき誠にありがとうございます。\nご滞在はいかがお過ごしでしょうか？\n\n当施設はオープンして間もないため、皆さまからのご意見・ご感想を大変参考にさせていただいております。\nもしお時間がございましたら、滞在中にお気づきになった点や感想をレビューにてお知らせいただけますと、とても励みになります。\n\n快適にお過ごしいただけるようサポートいたしますので、何かございましたらお気軽にお問い合わせください。`, en: "", flow: "", flowImage: null },
+      { id: 13, category: "アーリー/レイト", tag: "共通", title: "①申込フォームURL送信", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n（アーリーチェックイン/レイトチェックアウト）をご希望の場合は、下記フォームにてルールをご確認のうえ、リクエストをお送りください。\nhttps://申込フォームURL\n\n可能な限り対応いたしますが、ご希望に添えない場合もございますことをご了承ください。\n\nどうぞよろしくお願いいたします。`, en: `Thank you for your inquiry.\n\nIf you would like to request (early check-in/late check-out), please check the rules in the form below and submit your request.\nhttps://formurl\n\nWe will do our best to accommodate your request, but please understand that we may not be able to meet your request.\nThank you for your cooperation.`, flow: "", flowImage: null },
+      { id: 14, category: "アーリー/レイト", tag: "共通", title: "②ゲスト連絡（確認中）", ja: `お世話になっております。\n\nこの度は〇時からの（アーリーチェックイン/レイトチェックアウト）をお申し込みいただき、誠にありがとうございます。\n清掃の都合上、対応可能か前日に確定いたしますので、改めてご連絡させていただきます。\n\nよろしくお願いいたします。`, en: `Hi\n\nThank you very much for requesting an early check-in/late check-out.\nDue to cleaning arrangements, we will confirm availability the day before and contact you again.\n\nThank you for your understanding.`, flow: "NTH：レイト当日インがなければOK→清掃LINEで対応可能か確認後ゲストに報告。", flowImage: null },
+      { id: 15, category: "アーリー/レイト", tag: "共通", title: "③清掃LINE報告", ja: `（共有のみ）\n【施設/階数】：メビウス\n【チェックイン日】：明日○/○○\n【希望内容】：○○時 アーリーチェックイン\n      ○○時 レイトチェックアウト\n\nお世話になっております。\n上記、（アーリーイン/レイトアウト）受け入れますので、ご確認よろしくお願いいたします。`, en: `（アーリー/レイト確認）\n【施設/階数】：メビウス\n【チェックイン日】：明日○/○○\n【希望内容】：アーリーチェックイン ○○時 / レイトチェックアウト ○○時\n\nお世話になっております。\n上記、当日アウトインとなりますが、受け入れ可能でしょうか。\nご確認よろしくお願いいたします。`, flow: "清掃LINEはいつでもOK。OK→前日ゲスト連絡。NG→何もしない。", flowImage: null },
+      { id: 16, category: "アーリー/レイト", tag: "共通", title: "④OKゲスト前日報告（アーリー）", ja: `お世話になっております。\n\nアーリーチェックインについてご連絡です。\n\nスケジュールの調整ができましたので、ご希望どおり【13時からのチェックイン】で承ります。\n\n追加料金も不要でございますので、ぜひゆったりとお過ごしくださいませ。\n\n今回の対応も含め、ご滞在を気に入っていただけましたら、チェックアウト後のレビューで満点星付きのレビューをいただけますと弊社スタッフ一同、励みとなります。\n\nどうぞよろしくお願いいたします。`, en: `Hi,\n\nWe are writing to inform you regarding your early check-in request.\n\nWe have been able to adjust our schedule, so we will be happy to accommodate your request for a check-in starting at 1:00 PM.\n\nThere is no additional charge for this, so please feel free to relax and enjoy your stay.\n\nIf you are satisfied with your stay, including this arrangement, we would greatly appreciate it if you could leave us a 5-star review after check-out—it would be a great encouragement to our entire staff.\n\nThank you very much.`, flow: "OK→「-希望」希望だけ消す。NG→◎残し、「-希望」全消し。", flowImage: null },
+      { id: 17, category: "アーリー/レイト", tag: "共通", title: "④OKゲスト前日報告（レイト）", ja: `お世話になっております。\n\nレイトチェックアウトについてご連絡です。\n\nスケジュールの調整ができましたので、ご希望どおり【12時までのチェックアウト】で承ります。\n\n追加料金も不要でございますので、ぜひゆったりとお過ごしくださいませ。\n\n今回の対応も含め、ご滞在を気に入っていただけましたら、チェックアウト後のレビューで満点星付きのレビューをいただけますと弊社スタッフ一同、励みとなります。\n\nどうぞよろしくお願いいたします。`, en: `Hi,\n\nWe are writing to inform you regarding your late checkout request.\n\nWe have been able to adjust our schedule, so we will accommodate your request for a checkout by 12:00 PM.\n\nThere will be no additional charge, so please feel free to take your time.\n\nIf you enjoyed your stay, including this arrangement, we would greatly appreciate it if you could leave us a 5-star review after checkout.\n\nThank you very much.`, flow: "", flowImage: null },
+      { id: 18, category: "アーリー/レイト", tag: "共通", title: "⑤清掃完了前インOK案内", ja: `お世話になっております。\n明日のアーリーチェックインについてご連絡です。\n\n確認いたしましたところ、清掃の都合上、13時からのアーリーチェックインは現時点ではお約束が難しい状況でございます。\n明日の清掃が完了しましたら、改めてご連絡させていただきます。\n\nご希望に添えず申し訳ございませんが、ご理解いただけますと幸いです。\n何卒よろしくお願いいたします。`, en: "", flow: "申請期限過ぎた場合やAoniwaでイン希望があった場合に使用。", flowImage: null },
+      { id: 19, category: "アーリー/レイト", tag: "共通", title: "⑥清掃完了報告", ja: `お世話になっております。\n\n先ほど清掃スタッフより、清掃が完了したとご報告がありました。\n今以降、チェックインしていただいても問題ございません。\n\n何卒よろしくお願いいたします。`, en: "", flow: "", flowImage: null },
+      { id: 20, category: "アーリー/レイト", tag: "共通", title: "⑤OKゲスト前日報告（支払い）", ja: `お世話になっております。\n\nアーリーチェックイン/レイトチェックアウトについてご連絡です。\n〇時からのチェックインを承りました。\n\n今回5000円の料金のお支払いをご了承いただきましたので以下のURLより決済手続きをお願いいたします。\n▽ https://\n\nお支払い完了後にご一報いただけますと幸いです。\n\nよろしくお願いいたします。`, en: `Hello.\n\nThis is regarding your early check-in/late check-out request. We have confirmed your check-in starting at 1:00 PM.\n\nAs you have agreed to the ¥5,000 fee for this service, please complete the payment process via the following URL:\n▽ https://\n\nWe would appreciate it if you could notify us once payment is complete.\n\nThank you for your cooperation.`, flow: "", flowImage: null },
+      { id: 21, category: "アーリー/レイト NG", tag: "共通", title: "アーリー13時より前希望", ja: `お世話になっております。\n\nアーリーチェックインについて、13時より前をご希望する場合は前日含めてご予約ください。\n\nお受けできる場合は13時以降です。\nアーリーチェックインをご希望する場合は、下記フォームにてルールをご確認のうえ、リクエストをお送りください。\nhttps://申込フォームURL\n\n可能な限り対応いたしますが、ご希望に添えない場合もございますことをご了承ください。\n\nどうぞよろしくお願いいたします。`, en: `Hello. Thank you for your message.\n\nIf you wish to check in before 12:00 PM, please make a reservation starting from the previous day.\n\nThe earliest check-in we can offer, if available, is from 1:00 PM.\nIf you would like to request early check-in, please review the rules and submit your request using the form below:\nhttps://申込フォームURL\n\nWe will do our best to accommodate your request, but please understand that it may not always be possible.\n\nThank you for your understanding and cooperation.`, flow: "", flowImage: null },
+      { id: 22, category: "アーリー/レイト NG", tag: "共通", title: "アーリーお断り", ja: `お世話になっております。\nアーリーチェックインについてご連絡でございます。\n\n誠に申し訳ございませんが、当日はチェックアウトのご予約があるため、清掃の都合上アーリーチェックインをお受けすることができかねます。\nご希望に添えず大変恐縮ではございますが、チェックインは16時以降にお越しいただきますようお願いいたします。\n\n何卒ご理解いただけますと幸いです。\nどうぞよろしくお願いいたします。`, en: `Thank you for your inquiry.\n\nWe apologize, but we will be unable to accommodate early check-in due to check-out on the day and cleaning schedules.\nWe apologize for not being able to accommodate your request, but we ask that you please wait until check-in time.\n\nThank you for your cooperation.`, flow: "", flowImage: null },
+      { id: 23, category: "アーリー/レイト NG", tag: "共通", title: "レイトお断り", ja: `お世話になっております。\nレイトチェックアウトについてご連絡でございます。\n\n誠に申し訳ございませんが、当日の予約状況によりレイトチェックアウトはお受けすることができかねます。\nご希望に添えず大変恐縮ではございますが、チェックアウトは10時までにご退室いただきますようお願いいたします。\n\n何卒ご理解いただけますと幸いです。\nどうぞよろしくお願いいたします。`, en: `Thank you for your inquiry.\n\nWe apologize, but we will be unable to accommodate late check-out due to the reservation status on the day.\nWe apologize for not being able to accommodate your request.\n\nThank you for your cooperation.`, flow: "", flowImage: null },
+      { id: 24, category: "アーリー/レイト NG", tag: "共通", title: "繁忙期のお断り", ja: `お世話になっております。\nご連絡いただき、ありがとうございます。\n誠に申し訳ございませんが、●●の繁忙期のため、アーリーチェックインおよび荷物のお預かりが難しい状況です。\nご不便をおかけしますが、何卒ご理解いただけますようお願いいたします。`, en: "", flow: "", flowImage: null },
+      { id: 25, category: "荷物預かり", tag: "共通", title: "①申込フォームURL送信", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n（チェックイン前/チェックアウト後）の荷物預かりをご希望の場合は、下記フォームにてルールをご確認のうえ、リクエストをお送りください。\nhttps://フォームURL\n\n可能な限り対応いたしますが、ご希望に添えない場合もございますことをご了承ください。\n\nどうぞよろしくお願いいたします。`, en: `Thank you for your inquiry.\n\nIf you would like to store your luggage (before check-in/after check-out), please check the rules and submit your request in the form below.\nhttps://formurl\n\nWe will do our best to accommodate your request, but please understand that we may not be able to meet your request.\n\nThank you for your cooperation.`, flow: "", flowImage: null },
+      { id: 26, category: "荷物預かり", tag: "共通", title: "③ゲスト連絡（イン前OK・レビュー）", ja: `お世話になっております。\nお荷物のお預かりについてご連絡でございます。\n\n〇時の荷物預かりを承りました。\n到着時マニュアルに沿って郵便受けから鍵を取り出して下さい。\n鍵がない場合は清掃中です。ご自身のお部屋のインターフォンを鳴らして下さい。\n\nお部屋のご利用は16時以降となります。一度ご退室いただくようお願いいたします。\n\n費用は無料となっておりますが、今回の対応も含め、ご滞在を気に入っていただけましたら、チェックアウト後のレビューで満点星付きのレビューをいただけますと弊社スタッフ一同、励みとなります。\nよろしくお願いいたします。`, en: `Hi\n\nThank you for inquiring about luggage storage.\n\nWe have received your request to store your luggage at XX o'clock.\nThe room will be available for use after 4:00 p.m. We would ask you to leave the room for a moment.\n\nWe normally charge 3,000 yen for storing luggage, but since you promised to post a perfect review, we will store your luggage for free this time.\n\nThank you in advance for your cooperation.`, flow: "基本的に受け入れる。", flowImage: null },
+      { id: 27, category: "荷物預かり", tag: "共通", title: "③ゲスト連絡（アウト後OK）", ja: `お世話になっております。\nお荷物のお預かりについてご連絡でございます。\n\nチェックアウト後の荷物のお預かりを承りました。\nお預かりは〇時までとなります。\n必ず時間までにお荷物を取りに来ていただくようにお願いいたします。\n\n費用は無料となっております。\n\nよろしくお願いいたします。`, en: "", flow: "", flowImage: null },
+      { id: 28, category: "荷物預かり", tag: "共通", title: "④ゲスト連絡（アウト後NG）", ja: `お世話になっております。\nお荷物のお預かりについてご連絡でございます。\n\nチェックアウト後は清掃が入り、次のゲストとのお荷物の混同を防ぐため、お荷物のお預かりをお受けしておりません。\n\nご理解の程宜しくお願い致します。`, en: `Thank you for your inquiry regarding luggage storage.\n\nAfter checkout, cleaning begins to ensure the next guest's belongings are not mixed with yours.\nTherefore, we are unable to store luggage.\n\nWe appreciate your understanding.`, flow: "", flowImage: null },
+      { id: 29, category: "URLが見れない", tag: "Agoda/Booking", title: "メールアドレス確認・再送依頼", ja: `お問い合わせありがとうございます。\n稀にセキュリティ上、URLが弾かれてしまいURLが消えてしまいます。\nお客様よりご連絡の取りやすいメールアドレスから、下記アドレスにメール頂けるとそちらにご案内を再送いたします。\n\n送付先アドレス：cs(at)yadoplus(dot)com\n件名：（施設名） （予約番号）\n本文内容：URLを確認できません。\n\nお手数ですがよろしくお願い致します。`, en: `If you made a reservation through an affiliate site such as Agoda, the URL may be deleted.\n\nIf this happens, please send us an email from an email address where we can easily contact you directly to the address below, and we will resend the information to you.\n\nDestination address: cs(at)yadoplus(dot)com\nThank you for your patience.`, flow: "", flowImage: null },
+      { id: 30, category: "マニュアル未読", tag: "共通", title: "催促①（セルフチェックイン案内）", ja: `※セルフチェックインのご案内※\nこの度は当施設をご予約いただきありがとうございます。\n当施設は無人施設のためフロントがございません。必ず事前に下記手順でチェックイン方法をご確認ください。\n※アーリーチェックインなどのご希望についても、手順内のURLに詳細がある通り、当日のお申込は原則受付できませんのでご注意ください。\n\n★セルフチェックインの手順★\n下記のURLから、①宿泊者情報の入力と②ハウスルールの同意をお願いいたします。\nhttps://contact.kirinji-corporation.jp/contact/language.html?guest=0&booking=\n\n【①宿泊者情報の入力】\n上記URLを開き、STEP1～4の通りに宿泊者情報のご入力と、顔写真付き身分証のアップロードを全員分お願いします。\n(日本国籍の方は身分証明書の提出は代表者のみで結構です）\n\n【②ハウスルールの同意】\n入力後にハウスルールの同意が必要です。画面上部の「ルール」タブから同意するボタンを押してください。\n\n上記①②が完了しましたら、上部「チェックイン」タブより鍵の情報がご確認いただけます。\n※入室方法は【2日前】から表示されます。\n\n当日お会いできることを楽しみにしております。`, en: `※Self Check-in Information※\n\nThank you for booking with us. Our property is unmanned and does not have a front desk.\nPlease make sure to check the check-in procedure in advance.\n\n★Self Check-in Procedure★\nPlease ①enter your guest information and ②agree to the house rules via the URL below.\nhttps://contact.kirinji-corporation.jp/contact/language.html?guest=0&booking=\n\n[①Enter guest information]\nBe sure to check all checkboxes, and fill in only the fields marked with a red *.\n\n[②Agree to house rules]\nAfter entering your information, click the "Agree" button in the "Rules" tab at the top of the screen.\n\nOnce you've completed steps ① and ② above, you can confirm the check-in instructions in the "Check-in" tab at the top.\n\nThank you for your cooperation.`, flow: "", flowImage: null },
+      { id: 31, category: "マニュアル未読", tag: "共通", title: "催促②", ja: `※重要お知らせ※\nこんにちは。\n\nURLは確認されましたか？\nチェックイン日が迫っておりますので、お早めに下記URLより宿泊者情報の入力とハウスルールの同意を完了させてください。\n\nhttps:\n\nよろしくお願いいたします。`, en: `※Important Notice※\nHello.\n\nHave you checked the URL?\n\nThe check-in date is approaching, so please complete entering your guest information and agreeing to the house rules as soon as possible at the URL below.\n\nhttps:\n\nThank you in advance.`, flow: "", flowImage: null },
+      { id: 32, category: "マニュアル未読", tag: "共通", title: "ハウスルール未同意 催促①", ja: `お世話になっております。\n\n宿泊者名簿のご入力ありがとうございます。\nまだハウスルールの同意が完了していないようです。\n\nチェックインパスワードやその他の重要な情報をご確認いただくために、最後にハウスルールに同意する必要がございます。\n規則欄にある赤いボタンの箇所を押して、同意が完了しましたらページ上部のタブでご確認いただけます。\n\nhttp://\n\nご協力の程、よろしくお願いいたします。`, en: `Hello!\n\nThank you for filling out the guest list.\n\nBut it looks like you haven't yet agreed to the house rules.\nYou'll need to agree to the house rules to access your check-in password and other important information.\n\nOnce you've agreed, you can view them in the tab at the top of the page.\n\nIf you have any questions or concerns, please feel free to contact us.\nWe hope you have a great trip.`, flow: "", flowImage: null },
+      { id: 33, category: "ペット同泊", tag: "共通（ReSchool・rinne以外）", title: "①申込フォームURL送信", ja: `お世話になっております。\nお問合せいただき、ありがとうございました。\n\nペットとのご宿泊をご希望の場合、フォームにてルールをご確認のうえ、リクエストをお送りください。\nhttps://フォームURL\n\nどうぞよろしくお願いいたします。`, en: `Thank you for your inquiry.\n\nIf you wish to bring your pet, please check the rules in the form and submit your request.\nhttps://formurl\n\nThank you very much.`, flow: "", flowImage: null },
+      { id: 34, category: "ペット同泊", tag: "共通（ReSchool・rinne以外）", title: "②OK・請求リンク送付（ルール提起あり）", ja: `お世話になっております。\nお問合せいただき、ありがとうございました。\n\nペットとのご宿泊をご希望の場合、追加料金として3,000円を頂戴しております。以下の条件をご確認くださいませ。\n\n・小型犬のみ（25キロまで）\n・室内ではゲージのご使用をお願いいたします\n・ペットシーツはご持参ください\n・ペットシーツやその他のゴミ（糞等）はお持ち帰りください\n・万が一、わんちゃんが破損や汚損をした場合は、別途費用を請求させていただくことがございます\n\nお手数をおかけしますが、下記URLよりお支払いのお手続きをお願いいたします。\nhttps://beds24.com/bookpay.php?bookid=（予約ID)&pay=3000\n\nどうぞよろしくお願いいたします。`, en: `Thank you for your inquiry.\n\nIf you wish to bring your pet, there will be an additional charge of 3,000 yen. Please check the following conditions:\n\n* Small dogs only (up to 25 kg)\n* Please use a cage indoors\n* Please bring your own pet sheets\n* Please take pet sheets and other waste (feces, etc.) with you when you leave\n* In the event that your dog causes damage or soiling, you may be charged an additional fee.\n\nPlease complete the payment procedure via the URL below.\nhttps://beds24.com/bookpay.php?bookid=（予約ID）&pay=3000\n\nThank you for your understanding.`, flow: "", flowImage: null },
+      { id: 35, category: "BBQ", tag: "共通", title: "①申込フォームURL送信", ja: `お世話になっております。\nお問い合わせいただき,ありがとうございます。\n\nBBQのご利用を希望される場合は,フォームにてルールをご確認のうえ,リクエストをお送りください。\nhttps://申込フォームURL\n\nどうぞよろしくお願いいたします。`, en: `Thank you for your inquiry.\n\nIf you would like to use the BBQ, please check the rules and submit your request using the form.\nhttps://申込フォームURL\n\nThank you very much for your cooperation.`, flow: "", flowImage: null },
+      { id: 36, category: "BBQ", tag: "共通", title: "②支払いURL送信", ja: `お世話になっております。\n\nBBQのご利用につきまして、フォームよりリクエストをお送りいただきありがとうございます。\n\nこちらがBBQご利用料金のお支払い用リンクです。\nhttps://請求リンク\n\nお手数ですがお支払い完了後にご一報いただけますと幸いです。\n\nどうぞよろしくお願いいたします。`, en: `Thank you for your support.\n\nThank you for sending us your request for BBQ use through the form.\n\nThis is the link to pay for the BBQ use fee.\nhttps://\n\nWe would appreciate it if you could let us know after you have completed the payment.\nThank you very much.`, flow: "", flowImage: null },
+      { id: 37, category: "BBQ", tag: "共通", title: "③支払い完了後", ja: `ご連絡いただき,ありがとうございます。\n3,000円のお支払いを確認いたしました。\n\n当日はどうぞごゆっくりお過ごしくださいませ。`, en: `Thank you for contacting us. We have confirmed your payment of 3,000 yen.\n\nPlease enjoy your time on the day.`, flow: "", flowImage: null },
+      { id: 38, category: "忘れ物", tag: "NTH以外", title: "写真送信・着払い案内", ja: `この度は当施設をご利用いただきありがとうございました！\n\nご宿泊後のお部屋で、お忘れ物がございました。\nお忘れ物であれば着払いでの送付が可能ですので、ご希望場合以下の内容をお知らせください。\n\n【お送り先】\n・ご住所\n・お名前\n・お電話番号\n\nご不要であれば処分させていただくことも可能です。\n※ご返答いただけない場合はこちらで処分させていただきますのでご了承ください。\n\nご確認の程、よろしくお願いいたします。`, en: `Thank you for using our facility!\nWe found an item left behind in your room after your stay, so we're sending you a photo.\n\nWe can send it to you cash on delivery, so if you would like us to do so, please let us know the following information.\n\nShipping address\n・Address\n・Name\n・Phone number\n\nPlease note that if we do not receive a reply, we will dispose of the item.\n\nThank you for your cooperation.`, flow: "", flowImage: null },
+      { id: 39, category: "忘れ物", tag: "海外の方", title: "海外ゲストへの忘れ物案内", ja: `この度は当施設をご利用いただき、ありがとうございました！\n\nご宿泊後のお部屋で、お忘れ物がございましたので写真をお送りします。\n日本国内での郵送でしたら着払いでの送付が可能ですので、ご希望の場合はお送り先のご住所、お名前、お電話番号をお知らせください。\n\n海外発送についてはご対応できかねております。\n予めご了承くださいませ。\n\nまた、ご返信をいただけない場合はこちらで処分させていただきますのでご了承ください。\nご確認の程、よろしくお願いいたします。`, en: `Thank you for using our facility!\nWe found that you left something behind in your room after your stay, so we are sending you a photo.\n\nWe can send the item cash on delivery if you are sending it by mail within Japan, so if you would like this, please let us know your address, name, and phone number.\n\nWe cannot accept cash on delivery for overseas shipments.\nTherefore, we will ask you to send us a prepayment of 10,000 yen, and after the item has been shipped, we will calculate the exact shipping fee and refund the difference.\n\nPlease note that if we do not receive a reply, we will dispose of the item.\nThank you for your confirmation.`, flow: "", flowImage: null },
+      { id: 40, category: "忘れ物", tag: "NTH", title: "NTH：写真送信・現地受取案内", ja: `この度は当施設をご利用いただき、ありがとうございました。\nご宿泊後のお部屋で、お忘れ物がございましたので写真をお送りします。\n\n当施設は郵送での発送はできません。お手数ですが、現地まで取りにお越しいただく必要がございます。\n\nまたお受け取りは、原則として16時以降の対応ができません。\n下記URLのフォームより何時ごろお越しいただけるか、お知らせください。\nご不要であれば処分することも可能です。\n保管期間は本日より1週間とさせていただきます。\n\nhttps://docs.google.com/forms/d/e/1FAIpQLSd7tvVTA7TPrljrbJJK6oMabFY4hNYIIam8DRXqWJ9AXVoPVA/viewform\n\nどうぞよろしくお願いいたします。`, en: `Thank you very much for your stay at our facility.\n\nWe are sending you a photo of the items you left behind in your room after your stay.\n\nOur facility is not able to send items by mail. Please note that you will need to come to the property to pick it up.\n\nAlso, as a rule, we are unable to accept pickups after 4:00 p.m.\nPlease let us know what time you will be able to come by using the form at the URL below.\nIf you do not need it, you can dispose of it. The storage period will be one week from today.\n\nhttps://docs.google.com/forms/d/e/1FAIpQLSd7tvVTA7TPrljrbJJK6oMabFY4hNYIIam8DRXqWJ9AXVoPVA/viewform\n\nThank you very much for your cooperation.`, flow: "", flowImage: null },
+      { id: 41, category: "人数変更", tag: "共通", title: "1名予約・人数確認", ja: `お世話になっております。\nこの度はご予約いただき、ありがとうございます。\n\nご予約人数について確認のご連絡でございます。\n現在ご予約は【1名様】となっておりますが、人数はお間違いないでしょうか？\n\nご変更ございましたらご連絡をお願いいたします。\n\nご確認の程、よろしくお願いいたします。`, en: `Hello.\n\nThank you for your reservation.\nWe are contacting you to confirm the details of your reservation.\n\nCurrently, your reservation is for "1 guest." Are you sure that the number of guests is correct?\n\nWe would appreciate it if you could confirm this.\nThank you very much for your cooperation.`, flow: "差額料金はBedsで確認。じゃらんの場合は計算方法が違うため都度水野さん確認必要。", flowImage: null },
+      { id: 42, category: "人数変更", tag: "Airbnb", title: "人数変更（Airbnbリクエスト送信）", ja: `お問い合わせいただき、ありがとうございます。\n\n人数の変更については、Airbnbに人数変更のリクエスト依頼を致します。\n\nリクエストを送付後、承認していただけましたら予約変更完了となります。\n\nよろしくお願いいたします。`, en: `Hi\n\nRegarding changes to the number of guests, we will submit a request to Airbnb to adjust the guest count.\n\nOnce the request is submitted and approved, your reservation change will be complete.\n\nThank you for your cooperation.`, flow: "メッセージ画面の右側の欄を下にスクロール→「予約を変更する」→人数選択→右下のリクエスト送信。", flowImage: null },
+      { id: 43, category: "キャンセル", tag: "共通", title: "返金なしの可能性あり", ja: `お世話になっております。\nお問い合わせいただきありがとうございます。\n\nご予約をキャンセルされる場合、キャンセルポリシーに基づき、キャンセル料が発生する場合がございます。\n何卒ご理解いただけますと幸いです。\n\nどうぞよろしくお願いいたします。`, en: `Thank you for your inquiry.\n\nIf you cancel your reservation, a cancellation fee may apply according to our cancellation policy.\n\nWe appreciate your understanding.\n\nThank you for your cooperation.`, flow: "", flowImage: null },
+      { id: 44, category: "キャンセル", tag: "Airbnb", title: "キャンセル連絡（Airbnb）", ja: `お世話になっております。\n\n恐れ入りますが,キャンセルをご希望の場合は,お客様の方でAirbnbよりお手続きいただきますようお願いいたします。\n料金については,キャンセルポリシーに基づき,キャンセル料が発生する場合がございますので,何卒ご理解いただけますと幸いです。\n\nどうぞよろしくお願いいたします。`, en: `Thank you for your support.\n\nIf you wish to cancel, please make the necessary arrangements through Airbnb.\nPlease note that cancellation fees may apply in accordance with the cancellation policy, so we appreciate your understanding.\n\nThank you for your cooperation.`, flow: "", flowImage: null },
+      { id: 45, category: "台風・悪天候", tag: "共通", title: "台風懸念キャンセル①", ja: `お世話になります。\nご連絡いただきありがとうございます。\n現在キャンセルされるのであればキャンセルポリシー通りに返金はございません。\nもう少し近づいてからの判断となります。\n\n判断基準ですが、\n①災害級に相当\n 避難勧告のレベル3以上\n あるいは予約サイトからのキャンセルポリシー緩和指示\n②交通の問題\n 公共交通機関の運休や高速道路の通行止めなどで交通手段がなくなった場合\n\nそれらの状況を鑑みてのキャンセルであれば無償になる場合があります。\nよろしくお願いいたします。`, en: `Thank you for your inquiry.\n\nIf you cancel now, there will be no refund according to our cancellation policy.\nWe will make a decision closer to the date.\n\nThe criteria for this decision are:\n① Disaster-level event (Evacuation advisory level 3 or higher, or a relaxation of the cancellation policy from the booking site)\n② Transportation problems (suspension of public transport or closure of highways)\n\nIn consideration of these circumstances, cancellation may be free of charge.\n\nThank you for your understanding.`, flow: "", flowImage: null },
+      { id: 46, category: "台風・悪天候", tag: "佐渡", title: "欠航懸念キャンセル①", ja: `お世話になります。\nご連絡いただきありがとうございます。\n現在キャンセルされるのであればキャンセルポリシー通りに返金はございません。\n\nキャンセル料免除対象となる条件ですが、\n①大雨などによる気象警報、暴風警報などが出されている場合\n②フェリーが欠航となっている場合\n③高速道路の通行止めなどで交通手段がなくなった場合\n④当施設が運営困難と判断した場合\n\n警報や欠航が確認できた場合のみ、キャンセル料は免除となります。\nよろしくお願いいたします。`, en: `Thank you for your inquiry.\n\nIf you cancel now, there will be no refund according to our cancellation policy.\n\nThe conditions under which the cancellation fee will be waived are:\n① If a weather warning (heavy rain, storm, etc.) has been issued.\n② If the ferry service has been cancelled.\n③ If transportation is unavailable due to highway closures, etc.\n④ If our facility determines that it is difficult to operate and decides to close.\n\nThe cancellation fee will only be waived if a warning or cancellation has been confirmed.\n\nThank you for your understanding.`, flow: "フェリー欠航返金：1泊→全額返金。連泊初日欠航→初日分返金。2日目以降は欠航でなければキャンセル料発生。", flowImage: null },
+      { id: 47, category: "請求関係", tag: "アクア①〜③", title: "チェックアウト時間超過・追加料金請求", ja: `【チェックアウト時間超過による追加料金のご請求について】\nこの度は当施設にご宿泊いただき、誠にありがとうございました。\nご滞在に際しまして、チェックアウト時間は【午前10時】とご案内しておりましたが、当日【ご連絡をいただかないまま10時を過ぎてのご滞在（約--分）】が確認され、清掃業務に影響が生じたため、誠に遺憾ながらチェックアウト時間超過による追加料金（5,000円）を請求させていただきます。\n\nお支払い方法につきましては、以下の通りご案内申し上げます。\n【請求金額】5,000円（税込）\n【お支払い方法】※請求🔗作成\n\nご不明な点がございましたら、お気軽にご連絡くださいませ。\n何卒ご理解・ご協力のほど、よろしくお願い申し上げます。`, en: "", flow: "", flowImage: null },
+      { id: 48, category: "請求関係", tag: "全施設", title: "喫煙時の請求", ja: `この度は当施設にご宿泊いただき、誠にありがとうございます。\n恐れ入りますが、当施設はハウスマニュアルに記載の通り全館禁煙となっております。\n\nこのたび、お部屋にて喫煙の形跡が確認されました。\nつきましては、事実確認のためにも、実際に喫煙されたかどうかご返信をお願いいたします。\n\nなお、ご返信をいただけない場合や喫煙が確認された場合には、ハウスマニュアル記載の通り、3万円の費用を請求させていただきます。\n\n何卒ご理解・ご協力のほどよろしくお願い申し上げます。`, en: `Thank you very much for staying at our property.\nAs stated in the house manual, our facility is strictly non-smoking.\n\nWe have found evidence of smoking in the room.\nFor confirmation, could you please let us know whether you smoked during your stay?\n\nPlease note that if we do not receive your reply, or if smoking is confirmed, we will proceed with charging a 30,000 JPY penalty fee in accordance with the house manual.\n\nWe kindly ask for your understanding and cooperation.`, flow: "Airbnb：返信あり→Airbnbで請求、返信なし→2日後仲裁依頼。Airbnb以外：ほぼ取れないので手加減して請求する。", flowImage: null },
+      { id: 49, category: "請求関係", tag: "全施設", title: "荷物不法投棄・請求", ja: `この度はご宿泊頂きありがとうございます。\n先日お荷物の不法投棄が確認されました。\nマニュアル記載通り、不法投棄につきましては￥10,000の請求をさせていただいております。\nお送りさせていただいたリンクからお支払いをお願い致します。\nhttps://請求リンク`, en: `Thank you for staying with us.\nWe recently found that your luggage had been illegally dumped.\nWe are requesting a payment of 10,000 yen for the illegal dumping.\nPlease make the payment via the link we have sent you.\nhttps://billing link`, flow: "", flowImage: null },
+      { id: 50, category: "請求関係", tag: "共通", title: "支払い催促", ja: `お世話になっております。\nお支払いについてご連絡です。\n\nご登録いただいているクレジットカードでのお支払いが完了できませんでしたので,メールにてご案内させていただきます。\nお手数をおかけいたしますが,下記のURLからお支払い手続きをお願いいたします。\nhttps://請求リンク\n\nお支払いが確認でき次第,予約確定の確認メールをお送りさせていただきますので,お支払い完了後にご連絡をお願いいたします。\n\n何卒よろしくお願いいたします。`, en: `Hi, This is a notify of your payment failure.\n\nTo avoid unintended cancellation, please make payment from the URL below in 24 hours:\n●●Create and paste the URL●●\n\nBest regards,`, flow: "", flowImage: null },
+      { id: 51, category: "その他", tag: "共通", title: "お礼の返信", ja: `ご確認いただき,ありがとうございます。\n何かご不明点やご質問がございましたら,お気軽にご連絡くださいませ。\nどうぞ良い旅をお過ごしください。`, en: `Thank you for your confirmation.\n\nPlease feel free to contact us if you have any questions or concerns.\n\nHave a wonderful trip!`, flow: "", flowImage: null },
+      { id: 52, category: "その他", tag: "共通", title: "本文なしのメールへの返信", ja: `お世話になっております。\n先ほどいただいたメールの本文が空白となっておりました。\nお手数ですが,再度内容をご送信いただけますでしょうか。\nどうぞよろしくお願いいたします。`, en: `Thank you for your continued support.\n\nThe body of the email you sent earlier was blank.\n\nCould you please resend the email with the full content?\n\nThank you for your cooperation.`, flow: "", flowImage: null },
+      { id: 53, category: "その他", tag: "共通", title: "Wi-Fi再起動案内", ja: `ご不便をおかけして申し訳ございません。\nお手数ですが,端末の再起動をお試しいただけますでしょうか？\nまた,ルーターの電源を一度切り,数分後に入れ直していただくことで改善する場合もございます。\n何卒よろしくお願いいたします。`, en: "", flow: "", flowImage: null },
+      { id: 54, category: "その他", tag: "共通", title: "花火対応可否案内", ja: `お世話になっております。\nご連絡いただきありがとうございます。\n\n花火に関しましては、手持ち花火のみ可能となり、打ち上げ花火はご遠慮くださいませ。\nまた21時以降までに終わらせていただきますようお願いいたします。\n大声や大きな音などは近隣の方の迷惑になるのでお気をつけてお楽しみくださいませ。\n\n何卒よろしくお願いいたします。`, en: "", flow: "手持ち花火のみ全施設OK。21時まで。打ち上げ不可。施設ごとに場所の制限あり（Aoniwa：芝生・ウッドデッキNG）。", flowImage: null }
+    ];
+
+    const INITIAL_CATEGORIES = [
+      { name: "📝 予約〜チェックイン前", parent: null, type: "section" },
+      { name: "予約前", parent: "📝 予約〜チェックイン前", type: "folder" },
+      { name: "マニュアル未読", parent: "📝 予約〜チェックイン前", type: "folder" },
+      { name: "URLが見れない", parent: "📝 予約〜チェックイン前", type: "folder" },
+      { name: "人数変更", parent: "📝 予約〜チェックイン前", type: "folder" },
+      { name: "キャンセル", parent: "📝 予約〜チェックイン前", type: "folder" },
+      { name: "台風・悪天候", parent: "📝 予約〜チェックイン前", type: "folder" },
+
+      { name: "🏨 チェックイン・滞在中", parent: null, type: "section" },
+      { name: "チェックイン", parent: "🏨 チェックイン・滞在中", type: "folder" },
+      { name: "荷物預かり", parent: "🏨 チェックイン・滞在中", type: "folder" },
+      { name: "ペット同泊", parent: "🏨 チェックイン・滞在中", type: "folder" },
+      { name: "BBQ", parent: "🏨 チェックイン・滞在中", type: "folder" },
+
+      { name: "👋 チェックアウト後", parent: null, type: "section" },
+      { name: "チェックアウト", parent: "👋 チェックアウト後", type: "folder" },
+      { name: "レビュー催促", parent: "👋 チェックアウト後", type: "folder" },
+      { name: "忘れ物", parent: "👋 チェックアウト後", type: "folder" },
+
+      { name: "⚠️ トラブル・アーリー等", parent: null, type: "section" },
+      { name: "アーリー/レイト", parent: "⚠️ トラブル・アーリー等", type: "folder" },
+      { name: "アーリー/レイト NG", parent: "⚠️ トラブル・アーリー等", type: "folder" },
+      { name: "請求関係", parent: "⚠️ トラブル・アーリー等", type: "folder" },
+      { name: "その他", parent: "⚠️ トラブル・アーリー等", type: "folder" }
+    ];
+
+    const TAG_COLORS = { "Airbnb": "#FF5A5F", "Booking.com": "#003580", "Agoda": "#5392F9", "共通": "#4A7C6F", "NTH": "#8B5E3C", "全施設": "#555" };
+    function tagColor(tag) { return Object.keys(TAG_COLORS).find(k => tag.includes(k)) ? TAG_COLORS[Object.keys(TAG_COLORS).find(k => tag.includes(k))] : "#666"; }
+
+    function CopyBtn({ text }) {
+      const [copied, setCopied] = useState(false);
+      const copy = () => {
+        navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); });
+      };
+      if (!text) return <button style={{ opacity: 0.5, padding: "5px 14px", borderRadius: 6, fontSize: 12, border: "none" }}>空です</button>;
+      return <button onClick={copy} style={{ background: copied ? "#2E7D32" : "#1a1a2e", color: "#fff", border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>{copied ? "✓ コピーしました" : "📋 コピー"}</button>;
+    }
+
+    function DropZone({ onDrop, label }) {
+      const [isOver, setIsOver] = useState(false);
+      return (
+        <div
+          onDragOver={e => { e.preventDefault(); e.stopPropagation(); setIsOver(true); }}
+          onDragLeave={e => { e.stopPropagation(); setIsOver(false); }}
+          onDrop={e => {
+            e.preventDefault(); e.stopPropagation(); setIsOver(false);
+            try {
+              const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+              if(data.type === 'category') onDrop(data.name);
+            } catch(err){}
+          }}
+          style={{
+            height: isOver ? "30px" : "12px", 
+            background: isOver ? "#e1f5fe" : "transparent",
+            borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.2s", margin: "-6px 0", position: "relative", zIndex: 10,
+            border: isOver ? "2px dashed #0288d1" : "none"
+          }}
+        >
+          {isOver && <span style={{fontSize: 11, color: "#0288d1", fontWeight: "bold"}}>{label || "ここに移動"}</span>}
+        </div>
+      )
+    }
+
+    function TemplateCard({ t, categories, onUpdate, onDelete }) {
+      const [open, setOpen] = useState(false);
+      const [lang, setLang] = useState("ja"); 
+      const [isEditing, setIsEditing] = useState(false);
+      const [editData, setEditData] = useState({ ...t });
+
+      const currentText = lang === "ja" ? t.ja : lang === "en" ? t.en : t.flow;
+
+      const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width; let h = img.height;
+            const MAX = 600;
+            if (w > MAX || h > MAX) { if (w > h) { h *= MAX / w; w = MAX; } else { w *= MAX / h; h = MAX; } }
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            setEditData({...editData, flowImage: canvas.toDataURL('image/jpeg', 0.8)});
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const handleSave = () => { onUpdate(editData); setIsEditing(false); };
+      const handleDragStart = (e) => {
+        if (isEditing) { e.preventDefault(); return; }
+        e.dataTransfer.setData("text/plain", JSON.stringify({ type: "template", id: t.id }));
+        e.stopPropagation(); e.currentTarget.style.opacity = "0.4";
+      };
+      const handleDragEnd = (e) => { e.currentTarget.style.opacity = "1"; };
+
+      if (isEditing) {
+        return (
+          <div style={{ background: "#fff", borderRadius: 10, border: "2px solid #f0a500", marginBottom: 10, padding: "16px", boxShadow: "0 4px 12px rgba(0,0,0,.1)" }}>
+            <div style={{ marginBottom: 12, display: "flex", gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>タイトル</label>
+                <input type="text" value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ width: "120px" }}>
+                <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>タグ</label>
+                <input type="text" value={editData.tag} onChange={e => setEditData({...editData, tag: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>🇯🇵 日本語 テンプレート</label>
+              <textarea value={editData.ja} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ width: "100%", height: "100px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>🇬🇧 English テンプレート</label>
+              <textarea value={editData.en} onChange={e => setEditData({...editData, en: e.target.value})} style={{ width: "100%", height: "80px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 16, background: "#fffbf0", padding: "10px", borderRadius: 6, border: "1px solid #f0e6d2" }}>
+              <label style={{ fontSize: 11, color: "#7a5800", fontWeight: 700, display: "block", marginBottom: 6 }}>📋 対応の流れ・注意事項（画像もOK）</label>
+              <textarea value={editData.flow} onChange={e => setEditData({...editData, flow: e.target.value})} style={{ width: "100%", height: "60px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box", marginBottom: 8 }} />
+              
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <input type="file" accept="image/*" onChange={handleImageUpload} id={`file-${t.id}`} style={{ display: "none" }} />
+                <label htmlFor={`file-${t.id}`} style={{ background: "#fff", border: "1px solid #ccc", padding: "4px 10px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontWeight: 600 }}>📷 画像を選択</label>
+                {editData.flowImage && (
+                  <div style={{ position: "relative", display: "inline-block" }}>
+                    <img src={editData.flowImage} style={{ height: "40px", borderRadius: "4px", border: "1px solid #ccc" }} />
+                    <button onClick={() => setEditData({...editData, flowImage: null})} style={{ position: "absolute", top: -8, right: -8, background: "red", color: "#fff", borderRadius: "50%", width: 20, height: 20, border: "none", cursor: "pointer", fontSize: 10 }}>✖</button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button onClick={() => setIsEditing(false)} style={{ background: "#eee", color: "#333", border: "none", padding: "6px 16px", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>キャンセル</button>
+              <button onClick={handleSave} style={{ background: "#2E7D32", color: "#fff", border: "none", padding: "6px 20px", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>保存する</button>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} style={{ background: "#fff", borderRadius: 10, border: "1px solid #e8e8e8", marginBottom: 10, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
+          <div onClick={() => setOpen(!open)} style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none", background: open ? "#fafafa" : "#fff" }}>
+            <span style={{ fontSize: 16, cursor: "grab", color: "#ccc" }}>☰</span>
+            <span style={{ background: tagColor(t.tag), color: "#fff", borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>{t.tag}</span>
+            <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{t.title}</span>
+            <div style={{ display: "flex", gap: 6 }} onClick={e => e.stopPropagation()}>
+              <button onClick={() => { setEditData({...t}); setIsEditing(true); setOpen(true); }} style={{ background: "#ebedf3", border: "none", color: "#555", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>✏️ 編集</button>
+              <button onClick={() => { if(confirm("削除しますか？")) onDelete(t.id); }} style={{ background: "#ffebee", border: "none", color: "#c62828", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>🗑️ 削除</button>
+            </div>
+            <span style={{ color: "#aaa", fontSize: 14, marginLeft: 6 }}>{open ? "▲" : "▼"}</span>
+          </div>
+
+          {open && (
+            <div style={{ padding: "0 16px 14px", borderTop: "1px solid #f0f0f0" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginTop: 12, marginBottom: 8 }}>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={() => setLang("ja")} style={{ padding: "4px 14px", borderRadius: 20, border: "1.5px solid", borderColor: lang === "ja" ? "#1a1a2e" : "#ddd", background: lang === "ja" ? "#1a1a2e" : "#fff", color: lang === "ja" ? "#fff" : "#555", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>🇯🇵 日本語</button>
+                  <button onClick={() => setLang("en")} style={{ padding: "4px 14px", borderRadius: 20, border: "1.5px solid", borderColor: lang === "en" ? "#1a1a2e" : "#ddd", background: lang === "en" ? "#1a1a2e" : "#fff", color: lang === "en" ? "#fff" : "#555", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>🇬🇧 English</button>
+                  <button onClick={() => setLang("flow")} style={{ padding: "4px 14px", borderRadius: 20, border: "1.5px solid", borderColor: lang === "flow" ? "#f0a500" : "#ddd", background: lang === "flow" ? "#fffbf0" : "#fff", color: lang === "flow" ? "#7a5800" : "#555", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>📋 対応の流れ</button>
+                </div>
+                <div style={{ marginLeft: "auto" }}>
+                  {lang !== "flow" && <CopyBtn text={currentText} />}
+                </div>
+              </div>
+              
+              <pre style={{
+                background: lang === "flow" ? "#fffbf0" : "#f8f9fa", border: lang === "flow" ? "1px solid #f0e6d2" : "none",
+                borderRadius: 6, padding: "12px 14px", fontSize: 13, lineHeight: 1.8, whiteSpace: "pre-wrap",
+                wordBreak: "break-word", margin: 0, color: "#222", maxHeight: 340, overflowY: "auto", fontFamily: "inherit"
+              }}>{currentText || "（テキストはありません）"}</pre>
+
+              {lang === "flow" && t.flowImage && (
+                <div style={{ marginTop: 12, textAlign: "center", background: "#fffbf0", padding: "10px", borderRadius: 6, border: "1px solid #f0e6d2" }}>
+                  <img src={t.flowImage} style={{ maxWidth: "100%", maxHeight: "300px", borderRadius: "6px" }} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function FolderSection({ catObj, categories, templates, onMoveTemplate, onMoveFolder, onReorderCategory, onRenameCat, onDeleteCat, onAddTemplate, onUpdateTemplate, onDeleteTemplate, level = 0 }) {
+      const catName = catObj.name;
+      const [isOpen, setIsOpen] = useState(true);
+      const [isEditingName, setIsEditingName] = useState(false);
+      const [newName, setNewName] = useState(catName);
+
+      const childFolders = categories.filter(c => c.parent === catName);
+      const childTemplates = templates.filter(t => t.category === catName);
+      
+      const handleDragStart = (e) => {
+        if (isEditingName) { e.preventDefault(); return; }
+        e.dataTransfer.setData("text/plain", JSON.stringify({ type: "category", name: catName }));
+        e.stopPropagation();
+      };
+
+      const handleDropInside = (e) => {
+        e.preventDefault(); e.stopPropagation();
+        try {
+          const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+          if (data.type === "template") { 
+            onMoveTemplate(data.id, catName); 
+            setIsOpen(true); 
+          } 
+          else if (data.type === "category" && data.name !== catName) {
+            onMoveFolder(data.name, catName); 
+            setIsOpen(true);
+          }
+        } catch(err){}
+      };
+
+      const handleRenameSubmit = () => {
+        if (newName.trim() && newName !== catName) onRenameCat(catName, newName.trim());
+        setIsEditingName(false);
+      };
+
+      if (catObj.type === "section") {
+        return (
+          <div style={{ marginTop: 80, marginBottom: 24 }}>
+            <DropZone onDrop={(draggedName) => onReorderCategory(draggedName, catName)} label="ここに移動" />
+            <div 
+              draggable={!isEditingName} onDragStart={handleDragStart}
+              onDragOver={e => e.preventDefault()} onDrop={handleDropInside}
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "3px solid #1a1a2e", paddingBottom: "8px", marginBottom: "16px", cursor: "grab" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 16, color: "#ccc", cursor: "grab" }}>☰</span>
+                {isEditingName ? (
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <input type="text" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: "4px", fontSize: 18, fontWeight: "bold" }} />
+                    <button onClick={handleRenameSubmit} style={{ background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px" }}>保存</button>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: 20, fontWeight: 800, color: "#1a1a2e", letterSpacing: ".05em" }}>{catName}</span>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={() => setIsEditingName(true)} style={{ background: "transparent", border: "1px solid #ccc", color: "#555", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>✏️ 名前</button>
+                <button onClick={() => onDeleteCat(catName)} style={{ background: "transparent", border: "1px solid #fca5a5", color: "#c62828", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>🗑️ 削除</button>
+              </div>
+            </div>
+            
+            <div style={{ paddingLeft: "8px" }}>
+              {childFolders.map(childCat => (
+                <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} level={level + 1} />
+              ))}
+              {childFolders.length > 0 && (
+                <DropZone onDrop={(draggedName) => onMoveFolder(draggedName, catName)} label="この区切りの一番下に移動" />
+              )}
+              {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} />)}
+              
+              {childFolders.length === 0 && childTemplates.length === 0 && (
+                <div style={{ fontSize: 12, color: "#aaa", fontStyle: "italic", padding: "10px" }}>（フォルダをドラッグしてここに追加できます）</div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ marginBottom: 12, marginLeft: level > 0 ? "24px" : "0" }}>
+          <DropZone onDrop={(draggedName) => onReorderCategory(draggedName, catName)} label="上に移動" />
+          
+          <div 
+            style={{ background: "#fff", borderRadius: 10, border: "1px solid #dcdce6", overflow: "hidden", borderLeft: level > 0 ? "4px solid #1a1a2e" : "1px solid #dcdce6" }}
+          >
+            <div 
+              draggable={!isEditingName} onDragStart={handleDragStart} 
+              onDragOver={e => e.preventDefault()} onDrop={handleDropInside}
+              style={{ padding: "10px 16px", background: isOpen ? "#f0f1f5" : "#fff", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: isOpen ? "1px solid #dcdce6" : "none", cursor: "grab" }}
+            >
+              <div onClick={() => { if (!isEditingName) setIsOpen(!isOpen); }} style={{ flex: 1, display: "flex", alignItems: "center", cursor: "pointer", userSelect: "none" }}>
+                <span style={{ fontSize: 14, color: "#888", marginRight: 8, width: 14, display: "inline-block" }}>{isOpen ? "▼" : "▶"}</span>
+                <span style={{ fontSize: 18, marginRight: 6 }}>📂</span>
+                {isEditingName ? (
+                  <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: 4 }}>
+                    <input type="text" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: "2px 6px", fontSize: 14 }} autoFocus />
+                    <button onClick={handleRenameSubmit} style={{ background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 4, padding: "2px 8px", fontSize: 12 }}>保存</button>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>{catName}</span>
+                )}
+              </div>
+
+              <div style={{ display: "flex", gap: 6 }}>
+                {level > 0 && <button onClick={(e) => { e.stopPropagation(); onMoveFolder(catName, null); }} style={{ background: "#fff", border: "1px solid #ccc", color: "#333", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>⬆️ 外へ</button>}
+                <button onClick={(e) => { e.stopPropagation(); onAddTemplate(catName); setIsOpen(true); }} style={{ background: "#2E7D32", color: "#fff", border: "none", fontSize: 11, padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontWeight: 700 }}>➕ 追加</button>
+                <button onClick={(e) => { e.stopPropagation(); setIsEditingName(true); }} style={{ background: "#ebedf3", border: "none", color: "#555", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>✏️</button>
+                <button onClick={(e) => { e.stopPropagation(); onDeleteCat(catName); }} style={{ background: "#ffebee", border: "none", color: "#c62828", fontSize: 11, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>🗑️</button>
+              </div>
+            </div>
+
+            {isOpen && (
+              <div style={{ padding: "16px", background: "#f8f9fa" }}>
+                {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} level={level + 1} />)}
+                {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} />)}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      // ★ 最後に修正した順番のルールを確実に守るため、Hookの順番に気をつけます
+      const [categories, setCategories] = useState(null); 
+      const [templates, setTemplates] = useState(null);
+      const [search, setSearch] = useState("");
+      
+      useEffect(() => {
+        const unsubCat = db.collection('mailApp').doc('categories').onSnapshot(doc => {
+          if (doc.exists) {
+            setCategories(doc.data().data);
+          } else {
+            db.collection('mailApp').doc('categories').set({ data: INITIAL_CATEGORIES });
+          }
+        }, err => {
+          alert("【エラー】データベースへのアクセスが拒否されました。\nFirebaseの画面で「Firestore Database」を作成し、「テストモード」になっているか確認してください。");
+        });
+
+        const unsubTemp = db.collection('mailTemplates').onSnapshot(snap => {
+          if (snap.empty) {
+            INITIAL_TEMPLATES.forEach(t => {
+              db.collection('mailTemplates').doc(t.id.toString()).set(t);
+            });
+          } else {
+            const temps = snap.docs.map(doc => doc.data());
+            temps.sort((a,b) => b.id - a.id); 
+            setTemplates(temps);
+          }
+        }, err => {
+          console.error(err);
+        });
+
+        return () => { unsubCat(); unsubTemp(); };
+      }, []);
+
+      // フックの順序エラーをなくすため、ここでメモ化
+      const searchResultTemplates = useMemo(() => {
+        if (!search || !templates) return [];
+        const q = search.toLowerCase();
+        return templates.filter(t => t.title.toLowerCase().includes(q) || t.ja.toLowerCase().includes(q) || t.en.toLowerCase().includes(q) || t.tag.toLowerCase().includes(q) || (t.flow && t.flow.toLowerCase().includes(q)));
+      }, [templates, search]);
+
+      const rootFolders = categories ? categories.filter(c => c.parent === null) : [];
+
+      // ★ データが届くまでの間はローディング画面を表示する（真っ白を防止！）
+      if (!categories || !templates) {
+        return (
+          <div style={{textAlign: "center", marginTop: "100px", color: "#666", fontWeight: "bold", fontFamily: "sans-serif"}}>
+            ☁️ クラウドデータベースと通信中...<br/>
+            <span style={{fontSize: 12, fontWeight: "normal", display: "block", marginTop: 10}}>（初回はデータの構築に数秒かかる場合があります）</span>
+          </div>
+        );
+      }
+
+      const updateCats = (newCats) => db.collection('mailApp').doc('categories').set({ data: newCats });
+
+      const handleUpdateTemplate = (updatedT) => {
+        db.collection('mailTemplates').doc(updatedT.id.toString()).set(updatedT);
+      };
+      
+      const handleDeleteTemplate = (id) => {
+        db.collection('mailTemplates').doc(id.toString()).delete();
+      };
+
+      const handleAddCategory = (type) => {
+        const name = prompt(`新しい${type === "section" ? "区切り線" : "フォルダ"}の名前を入力してください`);
+        if (!name || !name.trim()) return;
+        if (categories.some(c => c.name === name.trim())) { alert("既に同じ名前が存在します。"); return; }
+        updateCats([...categories, { name: name.trim(), parent: null, type: type }]);
+      };
+
+      const handleDeleteCategory = (catName) => {
+        if (!confirm(`「${catName}」を削除しますか？\n（中に入っているデータは一番外に出されます）`)) return;
+        
+        let nextCats = categories.map(c => c.parent === catName ? { ...c, parent: null } : c);
+        nextCats = nextCats.filter(c => c.name !== catName);
+        if (!nextCats.some(c => c.name === "その他")) nextCats.push({ name: "その他", parent: null, type: "folder" });
+        updateCats(nextCats);
+
+        templates.filter(t => t.category === catName).forEach(t => {
+          db.collection('mailTemplates').doc(t.id.toString()).update({ category: "その他" });
+        });
+      };
+
+      const handleRenameCategory = (oldName, newName) => {
+        if (categories.some(c => c.name === newName)) { alert("既に同じ名前が存在します。"); return; }
+        const nextCats = categories.map(c => {
+          if (c.name === oldName) return { ...c, name: newName };
+          if (c.parent === oldName) return { ...c, parent: newName };
+          return c;
+        });
+        updateCats(nextCats);
+
+        templates.filter(t => t.category === oldName).forEach(t => {
+          db.collection('mailTemplates').doc(t.id.toString()).update({ category: newName });
+        });
+      };
+
+      const handleAddTemplate = (catName) => {
+        const newId = templates.length > 0 ? Math.max(...templates.map(t => t.id)) + 1 : 1;
+        const newTemp = { id: newId, category: catName, tag: "共通", title: "新規テンプレート", ja: "", en: "", flow: "", flowImage: null };
+        db.collection('mailTemplates').doc(newId.toString()).set(newTemp);
+      };
+
+      const handleMoveTemplate = (id, targetCategory) => {
+        db.collection('mailTemplates').doc(id.toString()).update({ category: targetCategory });
+      };
+      
+      const handleMoveFolder = (folderName, newParentName) => {
+        let curr = categories.find(c => c.name === newParentName);
+        while (curr) {
+          if (curr.name === folderName) {
+            alert("エラー：親フォルダを自分の子フォルダの中に入れることはできません！");
+            return;
+          }
+          curr = categories.find(c => c.name === curr.parent);
+        }
+        
+        const arr = [...categories];
+        const idx = arr.findIndex(c => c.name === folderName);
+        if(idx === -1) return;
+        const obj = arr.splice(idx, 1)[0];
+        obj.parent = newParentName;
+        arr.push(obj); 
+        updateCats(arr);
+      };
+
+      const handleReorderCategory = (draggedName, targetName) => {
+        if (draggedName === targetName) return;
+        const arr = [...categories];
+        const dIdx = arr.findIndex(c => c.name === draggedName);
+        const tIdx = arr.findIndex(c => c.name === targetName);
+        if (dIdx === -1 || tIdx === -1) return;
+        
+        const draggedObj = arr[dIdx];
+        const targetObj = arr[tIdx];
+
+        let curr = targetObj;
+        while (curr && curr.parent) {
+          if (curr.parent === draggedName) { alert("エラー：親を子の中に入れることはできません。"); return; }
+          curr = arr.find(c => c.name === curr.parent);
+        }
+
+        arr.splice(dIdx, 1);
+        const newTIdx = arr.findIndex(c => c.name === targetName);
+        draggedObj.parent = targetObj.parent;
+        arr.splice(newTIdx, 0, draggedObj);
+        updateCats(arr);
+      };
+
+      return (
+        <div>
+          <div style={{ background: "#1a1a2e", color: "#fff", padding: "20px 20px 16px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 10px rgba(0,0,0,.2)" }}>
+            <div style={{ maxWidth: 820, margin: "0 auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: ".02em" }}>☁️ メールテンプレート（クラウド共有）</h1>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => handleAddCategory("folder")} style={{ background: "transparent", color: "#4fc3f7", border: "1px solid #4fc3f7", padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>📂 新しいフォルダ</button>
+                  <button onClick={() => handleAddCategory("section")} style={{ background: "transparent", color: "#f0a500", border: "1px solid #f0a500", padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>➖ 区切り線を追加</button>
+                </div>
+              </div>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 キーワードで検索" style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "none", fontSize: 14, outline: "none", boxSizing: "border-box", background: "#2a2a4a", color: "#fff" }} />
+            </div>
+          </div>
+
+          <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 12px 60px" }}>
+            {search ? (
+              <div>
+                <p style={{ fontSize: 13, color: "#666", marginBottom: 12 }}>「{search}」の検索結果: {searchResultTemplates.length} 件</p>
+                {searchResultTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} onUpdate={handleUpdateTemplate} onDelete={handleDeleteTemplate} />)}
+              </div>
+            ) : (
+              <div>
+                {rootFolders.map(cat => (
+                  <FolderSection key={cat.name} catObj={cat} categories={categories} templates={templates} onMoveTemplate={handleMoveTemplate} onMoveFolder={handleMoveFolder} onReorderCategory={handleReorderCategory} onRenameCat={handleRenameCategory} onDeleteCat={handleDeleteCategory} onAddTemplate={handleAddTemplate} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} level={0} />
+                ))}
+                <DropZone onDrop={(draggedName) => {
+                  const arr = [...categories];
+                  const dIdx = arr.findIndex(c => c.name === draggedName);
+                  const obj = arr.splice(dIdx, 1)[0];
+                  obj.parent = null;
+                  arr.push(obj);
+                  updateCats(arr);
+                }} label="一番下に移動" />
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
