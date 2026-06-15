@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メールテンプレート管理アプリ（リンク機能・完全修正版）</title>
+  <title>メールテンプレート管理アプリ（スマート編集画面版）</title>
   
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -71,15 +71,11 @@
       )
     }
 
-    // ★ リンク（[リンク:5]など）を自動でクリック可能なボタンに変換するコンポーネント
     function LinkableText({ text, allTemplates, onLinkClick }) {
       if (!text) return null;
-      
       const regex = /\[リンク:(\d+)\]/g;
       if (!regex.test(text)) return <React.Fragment>{text}</React.Fragment>;
-
       const parts = text.split(/\[リンク:(\d+)\]/g);
-
       return (
         <React.Fragment>
           {parts.map((part, index) => {
@@ -87,19 +83,8 @@
               const targetId = Number(part);
               const targetTemplate = allTemplates.find(t => t.id === targetId);
               const title = targetTemplate ? targetTemplate.title : `不明なファイル(ID:${targetId})`;
-              
               return (
-                <button
-                  key={index}
-                  onClick={() => onLinkClick(targetId)}
-                  style={{
-                    background: "#e1f5fe", color: "#0288d1", border: "1px solid #b3e5fc",
-                    borderRadius: "4px", padding: "2px 6px", margin: "0 2px", fontSize: "12px",
-                    fontWeight: "bold", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3,
-                    verticalAlign: "middle"
-                  }}
-                  title="クリックしてこのファイルへジャンプ"
-                >
+                <button key={index} onClick={() => onLinkClick(targetId)} style={{ background: "#e1f5fe", color: "#0288d1", border: "1px solid #b3e5fc", borderRadius: "4px", padding: "2px 6px", margin: "0 2px", fontSize: "12px", fontWeight: "bold", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, verticalAlign: "middle" }} title="クリックしてこのファイルへジャンプ">
                   🔗 {title}
                 </button>
               );
@@ -119,7 +104,6 @@
 
       const viewMode = t.itemType === "流れ" ? "flow" : "text";
 
-      // 外部からジャンプ命令が来たら自動で開く
       useEffect(() => {
         if (forceOpenId === t.id) { setOpen(true); }
       }, [forceOpenId, t.id]);
@@ -158,6 +142,7 @@
         e.stopPropagation(); e.currentTarget.style.opacity = "0.4";
       };
 
+      // ＝＝ 編集画面のレンダリング ＝＝
       if (isEditing) {
         return (
           <div style={{ background: "#fff", borderRadius: 10, border: "2px solid #f0a500", marginBottom: 10, padding: "16px", boxShadow: "0 4px 12px rgba(0,0,0,.1)" }}>
@@ -178,23 +163,33 @@
               </div>
             </div>
             
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>🇯🇵 日本語 テンプレート</label>
-              <textarea value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ width: "100%", height: "100px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>🇬🇧 English テンプレート</label>
-              <textarea value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ width: "100%", height: "80px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
-            </div>
-            <div style={{ marginBottom: 16, background: "#fffbf0", padding: "10px", borderRadius: 6, border: "1px solid #f0e6d2" }}>
-              <label style={{ fontSize: 11, color: "#7a5800", fontWeight: 700, display: "block", marginBottom: 6 }}>📋 対応の流れ・注意事項</label>
-              <textarea value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} style={{ width: "100%", height: "60px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box", marginBottom: 8 }} />
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <input type="file" accept="image/*" onChange={handleImageUpload} id={`file-${t.id}`} style={{ display: "none" }} />
-                <label htmlFor={`file-${t.id}`} style={{ background: "#fff", border: "1px solid #ccc", padding: "4px 10px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontWeight: 600 }}>📷 画像を選択</label>
-                {editData.flowImage && <img src={editData.flowImage} style={{ height: "40px", borderRadius: "4px" }} />}
+            {/* ★ 項目タイプが「テンプレ」の時だけ、日本語・英語を表示（サイズ拡大） */}
+            {(editData.itemType === "テンプレ" || !editData.itemType) && (
+              <React.Fragment>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>🇯🇵 日本語 テンプレート（広め）</label>
+                  <textarea value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ width: "100%", height: "160px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box", lineHeight: 1.6 }} />
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>🇬🇧 English テンプレート（広め）</label>
+                  <textarea value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ width: "100%", height: "140px", padding: "8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box", lineHeight: 1.6 }} />
+                </div>
+              </React.Fragment>
+            )}
+
+            {/* ★ 項目タイプが「流れ」の時だけ、対応の流れを表示（大画面ノート化） */}
+            {editData.itemType === "流れ" && (
+              <div style={{ marginBottom: 16, background: "#fffbf0", padding: "12px", borderRadius: 6, border: "1px solid #f0e6d2" }}>
+                <label style={{ fontSize: 11, color: "#7a5800", fontWeight: 700, display: "block", marginBottom: 6 }}>📋 対応の流れ・注意事項（超広々エリア）</label>
+                <textarea value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} placeholder="ここに業務の流れを詳しくまとめてください。[リンク:ID] を書くと、テンプレへジャンプするボタンが作れます。" style={{ width: "100%", height: "260px", padding: "10px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box", marginBottom: 10, lineHeight: 1.7, fontSize: "14px" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <input type="file" accept="image/*" onChange={handleImageUpload} id={`file-${t.id}`} style={{ display: "none" }} />
+                  <label htmlFor={`file-${t.id}`} style={{ background: "#fff", border: "1px solid #ccc", padding: "4px 10px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontWeight: 600 }}>📷 画像を選択</label>
+                  {editData.flowImage && <img src={editData.flowImage} style={{ height: "40px", borderRadius: "4px" }} />}
+                </div>
               </div>
-            </div>
+            )}
+
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button onClick={() => setIsEditing(false)} style={{ background: "#eee", border: "none", padding: "6px 16px", borderRadius: 4, cursor: "pointer" }}>キャンセル</button>
               <button onClick={handleSave} style={{ background: "#2E7D32", color: "#fff", border: "none", padding: "6px 20px", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>保存する</button>
@@ -203,16 +198,9 @@
         );
       }
 
+      // ＝＝ 閲覧画面のレンダリング ＝＝
       return (
-        <div 
-          id={`file-card-${t.id}`} // スクロール用の目印
-          draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"} 
-          style={{ 
-            background: "#fff", borderRadius: 10, border: forceOpenId === t.id ? "2px solid #0288d1" : "1px solid #e8e8e8", 
-            marginBottom: 10, overflow: "hidden", boxShadow: forceOpenId === t.id ? "0 0 12px rgba(2,136,209,0.3)" : "0 1px 4px rgba(0,0,0,.05)",
-            transition: "all 0.3s"
-          }}
-        >
+        <div id={`file-card-${t.id}`} draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"} style={{ background: "#fff", borderRadius: 10, border: forceOpenId === t.id ? "2px solid #0288d1" : "1px solid #e8e8e8", marginBottom: 10, overflow: "hidden", boxShadow: forceOpenId === t.id ? "0 0 12px rgba(2,136,209,0.3)" : "0 1px 4px rgba(0,0,0,.05)", transition: "all 0.3s" }}>
           <div onClick={() => setOpen(!open)} style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none", background: open ? "#fafafa" : "#fff" }}>
             <span style={{ fontSize: 16, cursor: "grab", color: "#ccc" }}>☰</span>
             <span style={{ background: TYPE_COLORS[t.itemType || "テンプレ"], color: "#fff", borderRadius: 4, padding: "2px 12px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
@@ -262,7 +250,6 @@
     }
 
     // ＝＝＝ フォルダ（大項目）＆ 区切り線 コンポーネント ＝＝＝
-    // ★ 修正箇所：引数に level = 0 を確実に追加し、ReferenceErrorを防止しました。
     function FolderSection({ catObj, categories, templates, allTemplates, onMoveTemplate, onMoveFolder, onReorderCategory, onRenameCat, onDeleteCat, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, level = 0 }) {
       const catName = catObj.name;
       const [isOpen, setIsOpen] = useState(false);
@@ -272,7 +259,6 @@
       const childFolders = categories.filter(c => c.parent === catName);
       const childTemplates = templates.filter(t => t.category === catName);
 
-      // ジャンプ命令が来たら、ターゲットが含まれるフォルダを自動で開く
       const containsTarget = useMemo(() => {
         if (!forceOpenId) return false;
         const checkContains = (folderName) => {
@@ -384,11 +370,8 @@
         return () => { unsubCat(); unsubTemp(); };
       }, []);
 
-      // リンクがクリックされた時のジャンプ処理
       const handleLinkClick = (targetId) => {
         setForceOpenId(targetId);
-        
-        // フォルダが開くまでの時間を考慮してスクロール
         setTimeout(() => {
           const element = document.getElementById(`file-card-${targetId}`);
           if (element) {
