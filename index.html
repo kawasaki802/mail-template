@@ -39,7 +39,6 @@
       -webkit-font-smoothing: antialiased;
     }
     
-    /* 和モダン ヘッダー */
     .app-header {
       background: rgba(255, 255, 255, 0.98);
       backdrop-filter: blur(8px);
@@ -48,19 +47,15 @@
       position: sticky; top: 0; z-index: 100;
       box-shadow: var(--shadow-sm);
     }
-    .app-title {
-      margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-main);
-    }
+    .app-title { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-main); }
     
-    /* 検索バー */
     .search-input {
       width: 100%; padding: 12px 18px; border-radius: var(--radius-md);
       border: 1px solid var(--border); background: #FAF7F0;
-      font-size: 16px; outline: none; transition: all 0.2s;
+      font-size: 16px; outline: none; transition: all 0.2s; box-sizing: border-box;
     }
     .search-input:focus { background: #fff; border-color: var(--border-strong); box-shadow: 0 0 0 3px rgba(194, 178, 128, 0.15); }
     
-    /* 汎用ボタン */
     .btn {
       display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
       border-radius: var(--radius-md); font-size: 15px; font-weight: 600;
@@ -71,13 +66,11 @@
     .btn-outline { background: #fff; border-color: var(--border); color: var(--text-main); }
     .btn-outline:hover { background: #FDF9F0; border-color: var(--border-strong); }
     
-    /* プロっぽいゴーストボタン */
-    .btn-ghost { background: transparent; color: var(--text-muted); padding: 8px 14px; border: none; font-family: inherit; }
+    .btn-ghost { background: transparent; color: var(--text-muted); padding: 8px 14px; border: none; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
     .btn-ghost:hover { background: #F5F1E6; color: var(--text-main); border-radius: var(--radius-md); }
-    .btn-danger-ghost { background: transparent; color: #EF4444; padding: 8px 14px; border: none; font-family: inherit; }
+    .btn-danger-ghost { background: transparent; color: #EF4444; padding: 8px 14px; border: none; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
     .btn-danger-ghost:hover { background: #FEF2F2; border-radius: var(--radius-md); }
 
-    /* フォーム要素 */
     .form-label { display: block; font-size: 13px; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
     .form-control {
       width: 100%; padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border);
@@ -85,7 +78,6 @@
     }
     .form-control:focus { border-color: var(--border-strong); outline: none; box-shadow: 0 0 0 3px rgba(194, 178, 128, 0.15); }
     
-    /* 和モダン カード */
     .card {
       background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border);
       box-shadow: var(--shadow-sm); transition: all 0.3s ease; margin-bottom: 16px; overflow: hidden;
@@ -96,20 +88,16 @@
     .card-header:hover { background: #FDF9F0; }
     .card-body { padding: 0 24px 24px; border-top: 1px solid var(--border); }
     
-    /* ドラッグハンドル */
     .drag-handle { color: #DCD6C8; cursor: grab; font-size: 18px; padding: 4px; transition: color 0.2s; user-select: none; }
     .drag-handle:hover { color: var(--text-muted); }
 
-    /* 伝統色バッジ */
     .badge { padding: 6px 14px; border-radius: 24px; font-size: 13px; font-weight: 700; white-space: nowrap; user-select: none; }
     .badge-template { background: #E8EAF6; color: #1A237E; border: 1px solid #C5CAE9; }
     .badge-flow { background: #FFF3E0; color: #F57C00; border: 1px solid #FFE0B2; }
 
-    /* 和モダン セクション区切り */
     .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--border-strong); padding-bottom: 16px; margin-bottom: 24px; cursor: grab; }
     .section-title { font-size: 26px; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em; }
     
-    /* ファイル間リンク */
     .link-btn {
       background: #FAF7F0; color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px;
       padding: 6px 12px; margin: 0 4px; font-size: 14px; font-weight: 600; cursor: pointer;
@@ -117,7 +105,6 @@
     }
     .link-btn:hover { background: var(--border); color: var(--text-main); }
 
-    /* プレ表示エリア */
     .pre-area {
       background: #FDF9F0; border: 1px solid var(--border); border-radius: var(--radius-lg);
       padding: 20px 24px; font-size: 16px; line-height: 1.9; white-space: pre-wrap; word-break: break-word;
@@ -128,12 +115,27 @@
 </head>
 <body>
 
-  <div id="root"></div>
+  <div id="root">
+    <div style="text-align: center; margin-top: 150px; font-family: sans-serif; color: #7A7A7A;">
+      <h2 style="font-size: 20px;">⚙️ システムを準備中...</h2>
+      <p style="font-size: 14px;">（そのまま数秒お待ちください。通信環境によっては少し時間がかかります）</p>
+    </div>
+  </div>
 
   <script type="text/babel">
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZ7v3kRjAsOGwYdUX_w0FKoGPLUhbR1VQ",
+      authDomain: "mail-template-68598.firebaseapp.com",
+      projectId: "mail-template-68598",
+      storageBucket: "mail-template-68598.firebasestorage.app",
+      messagingSenderId: "475374524236",
+      appId: "1:475374524236:web:b39a70aebc72bb4172e1e9"
+    };
+    
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    const db = firebase.firestore();
     const { useState, useMemo, useEffect } = React;
 
-    // クラウド側の初期データを新しい仕様（itemTypeをベースに）に書き換えます
     const INITIAL_TEMPLATES = [
       { id: 1, category: "予約前", itemType: "テンプレ", title: "スペシャルオファー", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n元から料金を比較的安く設定している施設ですので、少しだけであれば可能です！`, en: `Hi\n\nThank you for your inquiry.\n\nSince our facility already has relatively low rates, we can accommodate a small adjustment!`, flow: "値引き額は500円目安。大きい金額は使わない。オプション無料でレビュー満点を狙う場合あり。", flowImage: null },
       { id: 2, category: "マニュアル未読", itemType: "流れ", title: "マニュアル未読 チェックの流れ", ja: "", en: "", flow: "【★テスト用リンクを繋いであります】\n1. ゲスト一覧から未読者を抽出する\n2. 2日前になっても未入力の場合は [リンク:5] を送信する。\n3. 前日になっても未入力の場合は [リンク:4] を送信する。\n4. それでも反応がない場合は [リンク:3] を送信する。", flowImage: null },
@@ -149,8 +151,6 @@
       { name: "マニュアル未読", parent: "📝 予約〜チェックイン前", type: "folder" },
       { name: "URLが見れない", parent: "📝 予約〜チェックイン前", type: "folder" }
     ];
-
-    const TYPE_COLORS = { "テンプレ": "#4A7C6F", "流れ": "#f0a500" };
 
     function CopyBtn({ text }) {
       const [copied, setCopied] = useState(false);
@@ -170,18 +170,18 @@
           onDragOver={e => { e.preventDefault(); e.stopPropagation(); setIsOver(true); }}
           onDragLeave={e => { e.stopPropagation(); setIsOver(false); }}
           onDrop={e => { e.preventDefault(); e.stopPropagation(); setIsOver(false); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); if(data.type === 'category') onDrop(data.name); } catch(err){} }}
-          style={{ height: isOver ? "36px" : "16px", background: isOver ? "#E8EAF6" : "transparent", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", margin: "-6px 0", position: "relative", zIndex: 10, border: isOver ? "2px dashed #C5CAE9" : "none" }}
+          style={{ height: isOver ? "36px" : "12px", background: isOver ? "#E8EAF6" : "transparent", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", margin: "-6px 0", position: "relative", zIndex: 10, border: isOver ? "2px dashed #C5CAE9" : "none" }}
         >
           {isOver && <span style={{fontSize: 12, color: "#1A237E", fontWeight: "bold"}}>{label || "ここに移動"}</span>}
         </div>
-      )
+      );
     }
 
     function LinkableText({ text, allTemplates, onLinkClick }) {
       if (!text) return null;
       const regex = /\[リンク:(\d+)\]/g;
       if (!regex.test(text)) return <React.Fragment>{text}</React.Fragment>;
-      const parts = text.split(regex);
+      const parts = text.split(/\[リンク:(\d+)\]/g);
       return (
         <React.Fragment>
           {parts.map((part, index) => {
@@ -265,11 +265,11 @@
             {editData.itemType === "流れ" && (
               <div style={{ marginBottom: 28, background: "#FDF5E6", padding: "20px", borderRadius: "12px", border: "1px solid #FEF3C7" }}>
                 <label className="form-label" style={{ color: "#7a5800" }}>📋 対応の流れ・社内マニュアル（超広々エリア）</label>
-                <textarea className="form-control" value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} style={{ height: "450px", resize: "vertical", marginBottom: 16, fontSize: "16px", lineHeight: 1.7 }} />
+                <textarea className="form-control" value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} placeholder="ここに業務の流れを詳しくまとめてください。[リンク:ID] を書くと、テンプレへジャンプするボタンが作れます。" style={{ height: "450px", resize: "vertical", marginBottom: 16, fontSize: "16px", lineHeight: 1.7 }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <input type="file" accept="image/*" onChange={handleImageUpload} id={`file-${t.id}`} style={{ display: "none" }} />
                   <label htmlFor={`file-${t.id}`} className="btn btn-outline">📷 画像を添付</label>
-                  {editData.flowImage && <div style={{position:"relative"}}><img src={editData.flowImage} style={{ height: "60px", borderRadius: "8px", border: "1px solid var(--border)" }} /><button onClick={() => setEditData({...editData, flowImage: null})} style={{ position: "absolute", top: -10, right: -10, background: "#EF4444", color: "#fff", width: 24, height: 24, border: "none", cursor: "pointer", fontSize: 12, borderRadius: "50%" }}>✖</button></div>}
+                  {editData.flowImage && <div style={{position:"relative"}}><img src={editData.flowImage} style={{ height: "60px", borderRadius: "8px", border: "1px solid var(--border)" }} /><button onClick={() => setEditData({...editData, flowImage: null})} style={{ position: "absolute", top: -10, right: -10, background: "#EF4444", color: "#fff", borderRadius: "50%", width: 24, height: 24, border: "none", cursor: "pointer", fontSize: 12 }}>✖</button></div>}
                 </div>
               </div>
             )}
@@ -363,8 +363,8 @@
                 )}
               </div>
               <div style={{ display: "flex", gap: 10 }}>
-                <button className="btn btn-outline" onClick={() => setIsEditingName(true)}>✏️</button>
-                <button className="btn btn-outline" style={{color: "#EF4444"}} onClick={() => onDeleteCat(catName)}>🗑️</button>
+                <button className="btn btn-outline" onClick={() => setIsEditingName(true)}>✏️ 名前</button>
+                <button className="btn btn-outline" style={{color: "#EF4444"}} onClick={() => onDeleteCat(catName)}>🗑️ 削除</button>
               </div>
             </div>
             <div style={{ paddingLeft: "12px" }}>
@@ -415,16 +415,26 @@
       const [forceOpenId, setForceOpenId] = useState(null);
       
       useEffect(() => {
+        // ★ Firebaseからデータを安全に読み込みます
         const unsubCat = db.collection('mailApp').doc('categories').onSnapshot(doc => {
-          if (doc.exists) setCategories(doc.data().data);
+          if (doc.exists) {
+            setCategories(doc.data().data);
+          } else {
+            // 初期データがない場合は自動生成して保存します
+            db.collection('mailApp').doc('categories').set({ data: INITIAL_CATEGORIES });
+            setCategories(INITIAL_CATEGORIES);
+          }
         });
+
         const unsubTemp = db.collection('mailTemplates').onSnapshot(snap => {
           if (snap.empty) {
-            // クラウド側が空っぽだった場合は初期データを安全に投入します
+            // 初期データがない場合は自動生成して保存します
             INITIAL_TEMPLATES.forEach(t => { db.collection('mailTemplates').doc(t.id.toString()).set(t); });
+            setTemplates(INITIAL_TEMPLATES);
           } else {
             const temps = snap.docs.map(doc => doc.data());
-            temps.sort((a,b) => b.id - a.id); setTemplates(temps);
+            temps.sort((a,b) => b.id - a.id); 
+            setTemplates(temps);
           }
         });
         return () => { unsubCat(); unsubTemp(); };
@@ -451,12 +461,9 @@
         if (!categories) return []; return categories.filter(c => c.parent === null);
       }, [categories]);
 
+      // まだデータが読み込めていない場合は「システムを準備中...」のままにする
       if (!categories || !templates) {
-        return (
-          <div style={{textAlign: "center", marginTop: "150px", color: "var(--text-muted)", fontSize: "18px", fontWeight: "bold", fontFamily: "sans-serif"}}>
-            🍵 読み込み中...
-          </div>
-        );
+        return null; // この部分は既にHTMLに書かれている「準備中」が表示され続けます
       }
 
       const updateCats = (newCats) => db.collection('mailApp').doc('categories').set({ data: newCats });
@@ -537,7 +544,9 @@
       );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('root')); root.render(<App />);
+    // Reactを安全に起動
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
