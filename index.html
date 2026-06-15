@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メールテンプレート管理アプリ（PC大画面最適化版）</title>
+  <title>メールテンプレート管理システム</title>
   
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -11,13 +11,113 @@
   
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #F9FAFB;         /* 優しい背景色 */
+      --card-bg: #FFFFFF;          /* カードの背景 */
+      --text-main: #111827;        /* メインテキスト */
+      --text-muted: #6B7280;       /* サブテキスト */
+      --primary: #2563EB;          /* メインの青色 */
+      --primary-hover: #1D4ED8;
+      --border: #E5E7EB;           /* 優しい境界線 */
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* ヘッダー */
+    .app-header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+    .app-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); }
+    
+    /* 検索バー */
+    .search-input {
+      width: 100%; padding: 12px 16px; border-radius: var(--radius-md);
+      border: 1px solid var(--border); background: #F3F4F6;
+      font-size: 15px; outline: none; transition: all 0.2s;
+    }
+    .search-input:focus { background: #fff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    
+    /* 汎用ボタン */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+      border-radius: var(--radius-md); font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s ease; outline: none; border: 1px solid transparent;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: #fff; border-color: var(--border); color: var(--text-main); }
+    .btn-outline:hover { background: #F9FAFB; border-color: #D1D5DB; }
+    .btn-ghost { background: transparent; color: var(--text-muted); padding: 6px 12px; }
+    .btn-ghost:hover { background: #F3F4F6; color: var(--text-main); }
+    .btn-danger-ghost { background: transparent; color: #EF4444; padding: 6px 12px; }
+    .btn-danger-ghost:hover { background: #FEF2F2; }
+
+    /* フォーム要素 */
+    .form-label { display: block; font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 6px; }
+    .form-control {
+      width: 100%; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border);
+      font-size: 15px; font-family: inherit; box-sizing: border-box; transition: all 0.2s;
+    }
+    .form-control:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    
+    /* カード（ファイル・フォルダ） */
+    .card {
+      background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm); transition: all 0.2s ease; margin-bottom: 12px; overflow: hidden;
+    }
+    .card:hover { box-shadow: var(--shadow-md); border-color: #D1D5DB; }
+    .card-target { border: 2px solid var(--primary); box-shadow: 0 0 0 4px rgba(37,99,235,0.15); }
+    .card-header { padding: 14px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+    .card-header:hover { background: #F9FAFB; }
+    .card-body { padding: 0 20px 20px; border-top: 1px solid var(--border); }
+    
+    /* ドラッグハンドル */
+    .drag-handle { color: #D1D5DB; cursor: grab; font-size: 16px; padding: 4px; }
+    .drag-handle:hover { color: #9CA3AF; }
+
+    /* バッジ */
+    .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .badge-template { background: #EFF6FF; color: #1E40AF; border: 1px solid #DBEAFE; }
+    .badge-flow { background: #FFFBEB; color: #B45309; border: 1px solid #FEF3C7; }
+
+    /* セクション区切り */
+    .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #E5E7EB; padding-bottom: 12px; margin-bottom: 20px; cursor: grab; }
+    .section-title { font-size: 22px; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em; }
+    
+    /* リンクテキスト */
+    .link-btn {
+      background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; border-radius: 6px;
+      padding: 4px 10px; margin: 0 4px; font-size: 13px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s; vertical-align: middle;
+    }
+    .link-btn:hover { background: #E5E7EB; color: #111827; }
+
+    /* プレ表示エリア */
+    .pre-area { background: #F9FAFB; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; font-size: 15px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; color: #374151; font-family: inherit; margin: 0; }
+    .flow-area { background: #FFFBEB; border: 1px solid #FEF3C7; }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background: #f2f3f7; font-family: sans-serif;">
+<body>
 
   <div id="root"></div>
 
   <script type="text/babel">
-    // Firebase初期化
     const firebaseConfig = {
       apiKey: "AIzaSyBZ7v3kRjAsOGwYdUX_w0FKoGPLUhbR1VQ",
       authDomain: "mail-template-68598.firebaseapp.com",
@@ -29,32 +129,18 @@
     
     if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.firestore();
-
     const { useState, useMemo, useEffect } = React;
 
-    const INITIAL_TEMPLATES = [
-      { id: 1, category: "予約前", itemType: "テンプレ", title: "スペシャルオファー", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n元から料金を比較的安く設定している施設ですので、少しだけであれば可能です！`, en: `Hi\n\nThank you for your inquiry.\n\nSince our facility already has relatively low rates, we can accommodate a small adjustment!`, flow: "値引き額は500円目安。大きい金額は使わない。オプション無料でレビュー満点を狙う場合あり。", flowImage: null },
-      { id: 2, category: "マニュアル未読", itemType: "流れ", title: "マニュアル未読 チェックの流れ", ja: "", en: "", flow: "【★テスト用リンクを繋いであります】\n1. ゲスト一覧から未読者を抽出する\n2. 2日前になっても未入力の場合は [リンク:5] を送信する。\n3. 前日になっても未入力の場合は [リンク:4] を送信する。\n4. それでも反応がない場合は [リンク:3] を送信する。", flowImage: null },
-      { id: 3, category: "マニュアル未読", itemType: "テンプレ", title: "ハウスルール未同意 催促①", ja: `お世話になっております。\n\n宿泊者名簿のご入力ありがとうございます。\nまだハウスルールの同意が完了していないようです。`, en: `Hello!\n\nThank you for filling out the guest list.\nBut it looks like you haven't yet agreed to the house rules.`, flow: "", flowImage: null },
-      { id: 4, category: "マニュアル未読", itemType: "テンプレ", title: "催促②", ja: `※重要なお知らせ※\nこんにちは。\n\nURLは確認されましたか？`, en: `※Important Notice※\nHello.\n\nHave you checked the URL?`, flow: "", flowImage: null },
-      { id: 5, category: "マニュアル未読", itemType: "テンプレ", title: "催促①（セルフチェックイン案内）", ja: `※セルフチェックインのご案内※\nこの度は当施設をご予約いただきありがとうございます。`, en: `※Self Check-in Information※\n\nThank you for booking with us.`, flow: "", flowImage: null },
-      { id: 6, category: "URLが見れない", itemType: "テンプレ", title: "メールアドレス確認・再送依頼", ja: `お問い合わせありがとうございます。\n稀にセキュリティ上、URLが弾かれてしまいURLが消えてしまいます。`, en: `If you made a reservation through an affiliate site such as Agoda, the URL may be deleted.`, flow: "", flowImage: null }
-    ];
-
-    const INITIAL_CATEGORIES = [
-      { name: "📝 予約〜チェックイン前", parent: null, type: "section" },
-      { name: "予約前", parent: "📝 予約〜チェックイン前", type: "folder" },
-      { name: "マニュアル未読", parent: "📝 予約〜チェックイン前", type: "folder" },
-      { name: "URLが見れない", parent: "📝 予約〜チェックイン前", type: "folder" }
-    ];
-
-    const TYPE_COLORS = { "テンプレ": "#4A7C6F", "流れ": "#f0a500" };
-
+    // --- コンポーネント群 ---
     function CopyBtn({ text }) {
       const [copied, setCopied] = useState(false);
       const copy = () => { navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); }); };
-      if (!text) return <button style={{ opacity: 0.5, padding: "6px 16px", borderRadius: 6, fontSize: 13, border: "none" }}>空です</button>;
-      return <button onClick={copy} style={{ background: copied ? "#2E7D32" : "#1a1a2e", color: "#fff", border: "none", borderRadius: 6, padding: "6px 16px", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>{copied ? "✓ コピーしました" : "📋 コピー"}</button>;
+      if (!text) return <button className="btn btn-outline" style={{opacity: 0.5}} disabled>空です</button>;
+      return (
+        <button onClick={copy} className={`btn ${copied ? 'btn-primary' : 'btn-outline'}`}>
+          {copied ? "✓ コピーしました" : "📋 コピー"}
+        </button>
+      );
     }
 
     function DropZone({ onDrop, label }) {
@@ -64,9 +150,9 @@
           onDragOver={e => { e.preventDefault(); e.stopPropagation(); setIsOver(true); }}
           onDragLeave={e => { e.stopPropagation(); setIsOver(false); }}
           onDrop={e => { e.preventDefault(); e.stopPropagation(); setIsOver(false); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); if(data.type === 'category') onDrop(data.name); } catch(err){} }}
-          style={{ height: isOver ? "36px" : "16px", background: isOver ? "#e1f5fe" : "transparent", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", margin: "-8px 0", position: "relative", zIndex: 10, border: isOver ? "2px dashed #0288d1" : "none" }}
+          style={{ height: isOver ? "36px" : "12px", background: isOver ? "#EFF6FF" : "transparent", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", margin: "-6px 0", position: "relative", zIndex: 10, border: isOver ? "2px dashed #93C5FD" : "none" }}
         >
-          {isOver && <span style={{fontSize: 12, color: "#0288d1", fontWeight: "bold"}}>{label || "ここに移動"}</span>}
+          {isOver && <span style={{fontSize: 12, color: "#2563EB", fontWeight: "bold"}}>{label || "ここに移動"}</span>}
         </div>
       )
     }
@@ -75,9 +161,7 @@
       if (!text) return null;
       const regex = /\[リンク:(\d+)\]/g;
       if (!regex.test(text)) return <React.Fragment>{text}</React.Fragment>;
-
-      const parts = text.split(/\[リンク:(\d+)\]/g);
-
+      const parts = text.split(regex);
       return (
         <React.Fragment>
           {parts.map((part, index) => {
@@ -85,24 +169,7 @@
               const targetId = Number(part);
               const targetTemplate = allTemplates.find(t => t.id === targetId);
               const title = targetTemplate ? targetTemplate.title : `不明なファイル(ID:${targetId})`;
-              
-              return (
-                <button
-                  key={index}
-                  onClick={() => onLinkClick(targetId)}
-                  style={{
-                    background: "#e1f5fe", color: "#0288d1", border: "1px solid #b3e5fc",
-                    borderRadius: "4px", padding: "4px 8px", margin: "0 4px", fontSize: "14px",
-                    fontWeight: "bold", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
-                    verticalAlign: "middle", transition: "all 0.2s"
-                  }}
-                  title="クリックしてこのファイルへジャンプ"
-                  onMouseOver={e => e.target.style.background = "#b3e5fc"}
-                  onMouseOut={e => e.target.style.background = "#e1f5fe"}
-                >
-                  🔗 {title}
-                </button>
-              );
+              return <button key={index} className="link-btn" onClick={() => onLinkClick(targetId)}>🔗 {title}</button>;
             }
             return <span key={index}>{part}</span>;
           })}
@@ -110,7 +177,7 @@
       );
     }
 
-    // ＝＝＝ テンプレート（ファイル）コンポーネント ＝＝＝
+    // ＝＝＝ テンプレート（ファイル） ＝＝＝
     function TemplateCard({ t, categories, allTemplates, onUpdate, onDelete, onLinkClick, forceOpenId }) {
       const [open, setOpen] = useState(false);
       const [lang, setLang] = useState("ja"); 
@@ -119,30 +186,20 @@
 
       const viewMode = t.itemType === "流れ" ? "flow" : "text";
 
-      useEffect(() => {
-        if (forceOpenId === t.id) { setOpen(true); }
-      }, [forceOpenId, t.id]);
-
-      useEffect(() => {
-        if (viewMode === "flow") { setLang("flow"); } 
-        else if (lang === "flow") { setLang("ja"); }
-      }, [viewMode]);
+      useEffect(() => { if (forceOpenId === t.id) { setOpen(true); } }, [forceOpenId, t.id]);
+      useEffect(() => { if (viewMode === "flow") { setLang("flow"); } else if (lang === "flow") { setLang("ja"); } }, [viewMode]);
 
       const currentText = lang === "ja" ? t.ja : lang === "en" ? t.en : t.flow;
 
       const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if(!file) return;
+        const file = e.target.files[0]; if(!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
           const img = new Image();
           img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let w = img.width; let h = img.height;
-            const MAX = 800; // PC向けに画像サイズの上限も少し拡大
+            const canvas = document.createElement('canvas'); let w = img.width; let h = img.height; const MAX = 800;
             if (w > MAX || h > MAX) { if (w > h) { h *= MAX / w; w = MAX; } else { w *= MAX / h; h = MAX; } }
-            canvas.width = w; canvas.height = h;
-            const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h);
+            canvas.width = w; canvas.height = h; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h);
             setEditData({...editData, flowImage: canvas.toDataURL('image/jpeg', 0.8)});
           };
           img.src = event.target.result;
@@ -151,115 +208,92 @@
       };
 
       const handleSave = () => { onUpdate(editData); setIsEditing(false); };
-      const handleDragStart = (e) => {
-        if (isEditing) { e.preventDefault(); return; }
-        e.dataTransfer.setData("text/plain", JSON.stringify({ type: "template", id: t.id }));
-        e.stopPropagation(); e.currentTarget.style.opacity = "0.4";
-      };
+      const handleDragStart = (e) => { if (isEditing) { e.preventDefault(); return; } e.dataTransfer.setData("text/plain", JSON.stringify({ type: "template", id: t.id })); e.stopPropagation(); e.currentTarget.style.opacity = "0.4"; };
 
       if (isEditing) {
         return (
-          <div style={{ background: "#fff", borderRadius: 10, border: "2px solid #f0a500", marginBottom: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0,0,0,.1)" }}>
-            <div style={{ marginBottom: 12, fontSize: "13px", color: "#e65100", fontWeight: "bold", background: "#fffbf0", padding: "8px 12px", borderRadius: "6px" }}>
-              💡 別の「流れ」ファイルからここにリンクを繋ぐ場合は、文章内に <span style={{background:"#fff", padding:"2px 6px", border:"1px solid #ffe082", borderRadius:4}}>[リンク:{t.id}]</span> と記入してください。
+          <div className="card" style={{ border: "2px solid #2563EB", padding: "20px" }}>
+            <div style={{ marginBottom: 16, fontSize: "12px", color: "#B45309", fontWeight: "bold", background: "#FFFBEB", padding: "10px 14px", borderRadius: "8px" }}>
+              💡 別の「流れ」からここにリンクを繋ぐ場合は <span style={{background:"#fff", padding:"4px 8px", border:"1px solid #FEF3C7", borderRadius:6}}>[リンク:{t.id}]</span> と記入してください。
             </div>
-            <div style={{ marginBottom: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
               <div style={{ flex: 2, minWidth: "250px" }}>
-                <label style={{ fontSize: 13, color: "#666", fontWeight: 700 }}>タイトル</label>
-                <input type="text" value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #ccc", boxSizing: "border-box", fontSize: "15px" }} />
+                <label className="form-label">タイトル</label>
+                <input type="text" className="form-control" value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} />
               </div>
               <div style={{ width: "160px" }}>
-                <label style={{ fontSize: 13, color: "#666", fontWeight: 700 }}>項目タイプ</label>
-                <select value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})} style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #ccc", background: "#fff", fontWeight: "bold", fontSize: "15px" }}>
-                  <option value="テンプレ">テンプレ</option>
-                  <option value="流れ">流れ</option>
+                <label className="form-label">項目タイプ</label>
+                <select className="form-control" value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})}>
+                  <option value="テンプレ">テンプレ</option><option value="流れ">流れ</option>
                 </select>
               </div>
             </div>
             
             {(editData.itemType === "テンプレ" || !editData.itemType) && (
               <React.Fragment>
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontSize: 13, color: "#666", fontWeight: 700 }}>🇯🇵 日本語 テンプレート</label>
-                  <textarea value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ width: "100%", height: "200px", padding: "12px", borderRadius: 6, border: "1px solid #ccc", boxSizing: "border-box", lineHeight: 1.6, fontSize: "15px" }} />
+                <div style={{ marginBottom: 20 }}>
+                  <label className="form-label">🇯🇵 日本語 テンプレート</label>
+                  <textarea className="form-control" value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ height: "240px", resize: "vertical" }} />
                 </div>
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 13, color: "#666", fontWeight: 700 }}>🇬🇧 English テンプレート</label>
-                  <textarea value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ width: "100%", height: "160px", padding: "12px", borderRadius: 6, border: "1px solid #ccc", boxSizing: "border-box", lineHeight: 1.6, fontSize: "15px" }} />
+                  <label className="form-label">🇬🇧 English テンプレート</label>
+                  <textarea className="form-control" value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ height: "180px", resize: "vertical" }} />
                 </div>
               </React.Fragment>
             )}
 
             {editData.itemType === "流れ" && (
-              <div style={{ marginBottom: 20, background: "#fffbf0", padding: "16px", borderRadius: 8, border: "1px solid #f0e6d2" }}>
-                <label style={{ fontSize: 13, color: "#7a5800", fontWeight: 700, display: "block", marginBottom: 8 }}>📋 対応の流れ・注意事項（広々エリア）</label>
-                <textarea value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} placeholder="ここに業務の流れを詳しくまとめてください。[リンク:ID] を書くと、テンプレへジャンプするボタンが作れます。" style={{ width: "100%", height: "350px", padding: "12px", borderRadius: 6, border: "1px solid #ccc", boxSizing: "border-box", marginBottom: 12, lineHeight: 1.7, fontSize: "15px" }} />
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ marginBottom: 24, background: "#FFFBEB", padding: "20px", borderRadius: "12px", border: "1px solid #FEF3C7" }}>
+                <label className="form-label" style={{ color: "#92400E" }}>📋 対応の流れ・社内マニュアル</label>
+                <textarea className="form-control" value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} style={{ height: "400px", resize: "vertical", marginBottom: 16 }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <input type="file" accept="image/*" onChange={handleImageUpload} id={`file-${t.id}`} style={{ display: "none" }} />
-                  <label htmlFor={`file-${t.id}`} style={{ background: "#fff", border: "1px solid #ccc", padding: "6px 14px", borderRadius: 6, fontSize: 13, cursor: "pointer", fontWeight: 600 }}>📷 画像を選択</label>
-                  {editData.flowImage && <img src={editData.flowImage} style={{ height: "50px", borderRadius: "6px" }} />}
+                  <label htmlFor={`file-${t.id}`} className="btn btn-outline">📷 画像を添付</label>
+                  {editData.flowImage && <div style={{position:"relative"}}><img src={editData.flowImage} style={{ height: "50px", borderRadius: "6px", border: "1px solid #D1D5DB" }} /><button onClick={() => setEditData({...editData, flowImage: null})} style={{ position: "absolute", top: -8, right: -8, background: "#EF4444", color: "#fff", borderRadius: "50%", width: 20, height: 20, border: "none", cursor: "pointer", fontSize: 10 }}>✖</button></div>}
                 </div>
               </div>
             )}
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button onClick={() => setIsEditing(false)} style={{ background: "#eee", border: "none", padding: "8px 20px", borderRadius: 6, cursor: "pointer", fontSize: "14px", fontWeight: "bold", color: "#555" }}>キャンセル</button>
-              <button onClick={handleSave} style={{ background: "#2E7D32", color: "#fff", border: "none", padding: "8px 24px", borderRadius: 6, cursor: "pointer", fontSize: "14px", fontWeight: "bold" }}>保存する</button>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button className="btn btn-outline" onClick={() => setIsEditing(false)}>キャンセル</button>
+              <button className="btn btn-primary" onClick={handleSave}>保存する</button>
             </div>
           </div>
         );
       }
 
       return (
-        <div 
-          id={`file-card-${t.id}`} 
-          draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"} 
-          style={{ 
-            background: "#fff", borderRadius: 12, border: forceOpenId === t.id ? "2px solid #0288d1" : "1px solid #e8e8e8", 
-            marginBottom: 12, overflow: "hidden", boxShadow: forceOpenId === t.id ? "0 0 16px rgba(2,136,209,0.3)" : "0 2px 6px rgba(0,0,0,.04)",
-            transition: "all 0.3s"
-          }}
-        >
-          <div onClick={() => setOpen(!open)} style={{ padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", userSelect: "none", background: open ? "#fafafa" : "#fff" }}>
-            <span style={{ fontSize: 18, cursor: "grab", color: "#ccc" }}>☰</span>
-            
-            <span style={{ background: TYPE_COLORS[t.itemType || "テンプレ"], color: "#fff", borderRadius: 6, padding: "4px 14px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>
-              {t.itemType || "テンプレ"}
+        <div id={`file-card-${t.id}`} className={`card ${forceOpenId === t.id ? 'card-target' : ''}`} draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"}>
+          <div className="card-header" onClick={() => setOpen(!open)}>
+            <span className="drag-handle">☰</span>
+            <span className={`badge ${t.itemType === '流れ' ? 'badge-flow' : 'badge-template'}`}>{t.itemType || "テンプレ"}</span>
+            <span style={{ fontWeight: 600, fontSize: "16px", flex: 1, display: "flex", alignItems: "center", gap: "10px" }}>
+              {t.title} <span style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: "normal" }}>ID: {t.id}</span>
             </span>
-            
-            <span style={{ fontWeight: 600, fontSize: 16, flex: 1, display: "flex", alignItems: "center", gap: "8px" }}>
-              {t.title} 
-              <span style={{ fontSize: "13px", color: "#aaa", fontWeight: "normal" }}>(ID: {t.id})</span>
-            </span>
-
             <div style={{ display: "flex", gap: 8 }} onClick={e => e.stopPropagation()}>
-              <button onClick={() => { setEditData({...t}); setIsEditing(true); setOpen(true); }} style={{ background: "#ebedf3", border: "none", color: "#555", fontSize: 13, padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontWeight: 600 }}>✏️ 編集</button>
-              <button onClick={() => { if(confirm("削除しますか？")) onDelete(t.id); }} style={{ background: "#ffebee", border: "none", color: "#c62828", fontSize: 13, padding: "6px 12px", borderRadius: 6, cursor: "pointer" }}>🗑️</button>
+              <button className="btn btn-ghost" onClick={() => { setEditData({...t}); setIsEditing(true); setOpen(true); }}>✏️ 編集</button>
+              <button className="btn btn-danger-ghost" onClick={() => { if(confirm("削除しますか？")) onDelete(t.id); }}>🗑️</button>
             </div>
-            <span style={{ color: "#aaa", fontSize: 16, marginLeft: "4px" }}>{open ? "▲" : "▼"}</span>
+            <span style={{ color: "var(--text-muted)", marginLeft: "4px" }}>{open ? "▲" : "▼"}</span>
           </div>
 
           {open && (
-            <div style={{ padding: "0 20px 20px", borderTop: "1px solid #f0f0f0" }}>
+            <div className="card-body">
               {viewMode === "flow" ? (
-                <div style={{ marginTop: 16 }}>
-                  <div style={{ background: "#fffbf0", border: "1px solid #f0e6d2", borderRadius: 8, padding: "16px 20px", fontSize: 15, lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "#222", fontFamily: "inherit" }}>
+                <div style={{ paddingTop: "16px" }}>
+                  <pre className="pre-area flow-area">
                     <LinkableText text={t.flow} allTemplates={allTemplates} onLinkClick={onLinkClick} />
-                  </div>
-                  {t.flowImage && (
-                    <div style={{ marginTop: 16, textAlign: "center" }}>
-                      <img src={t.flowImage} style={{ maxWidth: "100%", maxHeight: "400px", borderRadius: "8px" }} />
-                    </div>
-                  )}
+                  </pre>
+                  {t.flowImage && <div style={{ marginTop: 20, textAlign: "center" }}><img src={t.flowImage} style={{ maxWidth: "100%", maxHeight: "500px", borderRadius: "8px", border: "1px solid var(--border)" }} /></div>}
                 </div>
               ) : (
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 16, marginBottom: 12 }}>
-                    <button onClick={() => setLang("ja")} style={{ padding: "6px 20px", borderRadius: 24, border: "2px solid", borderColor: lang === "ja" ? "#1a1a2e" : "#ddd", background: lang === "ja" ? "#1a1a2e" : "#fff", color: lang === "ja" ? "#fff" : "#555", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>🇯🇵 日本語</button>
-                    <button onClick={() => setLang("en")} style={{ padding: "6px 20px", borderRadius: 24, border: "2px solid", borderColor: lang === "en" ? "#1a1a2e" : "#ddd", background: lang === "en" ? "#1a1a2e" : "#fff", color: lang === "en" ? "#fff" : "#555", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>🇬🇧 English</button>
+                <div style={{ paddingTop: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                    <button onClick={() => setLang("ja")} className={`btn ${lang === "ja" ? "btn-primary" : "btn-outline"}`} style={{borderRadius: 20}}>🇯🇵 日本語</button>
+                    <button onClick={() => setLang("en")} className={`btn ${lang === "en" ? "btn-primary" : "btn-outline"}`} style={{borderRadius: 20}}>🇬🇧 English</button>
                     <div style={{ marginLeft: "auto" }}><CopyBtn text={currentText} /></div>
                   </div>
-                  <pre style={{ background: "#f8f9fa", borderRadius: 8, padding: "16px 20px", fontSize: 15, lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "#222", maxHeight: 400, overflowY: "auto", fontFamily: "inherit" }}>
+                  <pre className="pre-area">
                     <LinkableText text={currentText} allTemplates={allTemplates} onLinkClick={onLinkClick} />
                   </pre>
                 </div>
@@ -270,7 +304,7 @@
       );
     }
 
-    // ＝＝＝ フォルダ（大項目）＆ 区切り線 コンポーネント ＝＝＝
+    // ＝＝＝ フォルダ＆セクション ＝＝＝
     function FolderSection({ catObj, categories, templates, allTemplates, onMoveTemplate, onMoveFolder, onReorderCategory, onRenameCat, onDeleteCat, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, level = 0 }) {
       const catName = catObj.name;
       const [isOpen, setIsOpen] = useState(false);
@@ -285,45 +319,37 @@
         const checkContains = (folderName) => {
           if (templates.some(t => t.category === folderName && t.id === forceOpenId)) return true;
           const sub = categories.filter(c => c.parent === folderName);
-          for (const s of sub) { if (checkContains(s.name)) return true; }
-          return false;
+          for (const s of sub) { if (checkContains(s.name)) return true; } return false;
         };
         return checkContains(catName);
       }, [forceOpenId, templates, categories, catName]);
 
-      useEffect(() => {
-        if (containsTarget) { setIsOpen(true); }
-      }, [containsTarget]);
+      useEffect(() => { if (containsTarget) { setIsOpen(true); } }, [containsTarget]);
       
       const handleDragStart = (e) => { if (isEditingName) { e.preventDefault(); return; } e.dataTransfer.setData("text/plain", JSON.stringify({ type: "category", name: catName })); e.stopPropagation(); };
       const handleDropInside = (e) => { e.preventDefault(); e.stopPropagation(); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); if (data.type === "template") { onMoveTemplate(data.id, catName); setIsOpen(true); } else if (data.type === "category" && data.name !== catName) { onMoveFolder(data.name, catName); setIsOpen(true); } } catch(err){} };
 
       if (catObj.type === "section") {
         return (
-          <div style={{ marginTop: 60, marginBottom: 24 }}>
+          <div style={{ marginTop: 60, marginBottom: 32 }}>
             <DropZone onDrop={(draggedName) => onReorderCategory(draggedName, catName)} label="ここに移動" />
-            <div draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "3px solid #1a1a2e", paddingBottom: "10px", marginBottom: "20px", cursor: "grab" }}>
+            <div className="section-header" draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 18, color: "#ccc" }}>☰</span>
+                <span className="drag-handle">☰</span>
                 {isEditingName ? (
-                  <div style={{ display: "flex", gap: 6 }}><input type="text" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: "6px", fontSize: 20, fontWeight: "bold", borderRadius: 4, border: "1px solid #ccc" }} /><button onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }} style={{ background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 4, padding: "6px 12px", fontSize: 14, fontWeight: "bold" }}>保存</button></div>
+                  <div style={{ display: "flex", gap: 8 }}><input type="text" className="form-control" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "250px", fontSize: "18px", fontWeight: "bold" }} /><button className="btn btn-primary" onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }}>保存</button></div>
                 ) : (
-                  <span style={{ fontSize: 24, fontWeight: 800, color: "#1a1a2e", letterSpacing: ".05em" }}>{catName}</span>
+                  <span className="section-title">{catName}</span>
                 )}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => setIsEditingName(true)} style={{ background: "transparent", border: "1px solid #ccc", color: "#555", fontSize: 13, padding: "6px 10px", borderRadius: 6, cursor: "pointer" }}>✏️ 名前</button>
-                <button onClick={() => onDeleteCat(catName)} style={{ background: "transparent", border: "1px solid #fca5a5", color: "#c62828", fontSize: 13, padding: "6px 10px", borderRadius: 6, cursor: "pointer" }}>🗑️ 削除</button>
+                <button className="btn btn-outline" onClick={() => setIsEditingName(true)}>✏️</button>
+                <button className="btn btn-outline" style={{color: "var(--danger)"}} onClick={() => onDeleteCat(catName)}>🗑️</button>
               </div>
             </div>
-            
-            <div style={{ paddingLeft: "12px" }}>
-              {childFolders.map(childCat => (
-                <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} level={level + 1} />
-              ))}
-              {childFolders.length > 0 && (
-                <DropZone onDrop={(draggedName) => onMoveFolder(draggedName, catName)} label="この区切りの一番下に移動" />
-              )}
+            <div style={{ paddingLeft: "8px" }}>
+              {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} level={level + 1} />)}
+              {childFolders.length > 0 && <DropZone onDrop={(draggedName) => onMoveFolder(draggedName, catName)} label="の一番下に移動" />}
               {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />)}
             </div>
           </div>
@@ -333,31 +359,27 @@
       return (
         <div style={{ marginBottom: 16, marginLeft: level > 0 ? "32px" : "0" }}>
           <DropZone onDrop={(draggedName) => onReorderCategory(draggedName, catName)} label="上に移動" />
-          
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #dcdce6", overflow: "hidden", borderLeft: level > 0 ? "5px solid #1a1a2e" : "1px solid #dcdce6" }}>
-            <div draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} style={{ padding: "14px 20px", background: isOpen ? "#f0f1f5" : "#fff", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: isOpen ? "1px solid #dcdce6" : "none", cursor: "grab" }}>
-              <div onClick={() => { if (!isEditingName) setIsOpen(!isOpen); }} style={{ flex: 1, display: "flex", alignItems: "center", cursor: "pointer", userSelect: "none" }}>
-                <span style={{ fontSize: 16, color: "#888", marginRight: 10, width: 16, display: "inline-block" }}>{isOpen ? "▼" : "▶"}</span>
-                <span style={{ fontSize: 20, marginRight: 8 }}>📂</span>
-                {isEditingName ? (
-                  <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: 6 }}><input type="text" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: "4px 8px", fontSize: 16, borderRadius: 4, border: "1px solid #ccc" }} autoFocus /><button onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }} style={{ background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 4, padding: "4px 12px", fontSize: 14, fontWeight: "bold" }}>保存</button></div>
-                ) : (
-                  <span style={{ fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>{catName}</span>
-                )}
-              </div>
-
-              <div style={{ display: "flex", gap: 8 }}>
-                {level > 0 && <button onClick={(e) => { e.stopPropagation(); onMoveFolder(catName, null); }} style={{ background: "#fff", border: "1px solid #ccc", color: "#333", fontSize: 13, padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontWeight: "bold" }}>⬆️ 外へ</button>}
-                <button onClick={(e) => { e.stopPropagation(); onAddTemplate(catName); setIsOpen(true); }} style={{ background: "#2E7D32", color: "#fff", border: "none", fontSize: 13, padding: "6px 14px", borderRadius: 6, cursor: "pointer", fontWeight: 700 }}>➕ 追加</button>
-                <button onClick={(e) => { e.stopPropagation(); setIsEditingName(true); }} style={{ background: "#ebedf3", border: "none", color: "#555", fontSize: 13, padding: "6px 12px", borderRadius: 6, cursor: "pointer" }}>✏️</button>
-                <button onClick={(e) => { e.stopPropagation(); onDeleteCat(catName); }} style={{ background: "#ffebee", border: "none", color: "#c62828", fontSize: 13, padding: "6px 12px", borderRadius: 6, cursor: "pointer" }}>🗑️</button>
+          <div className="card" style={{ borderLeft: level > 0 ? "4px solid var(--primary)" : "1px solid var(--border)" }}>
+            <div className="card-header" draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} onClick={() => { if (!isEditingName) setIsOpen(!isOpen); }}>
+              <span style={{ fontSize: 14, color: "var(--text-muted)", marginRight: 8, width: 16, display: "inline-block" }}>{isOpen ? "▼" : "▶"}</span>
+              <span style={{ fontSize: 20, marginRight: 8 }}>📂</span>
+              {isEditingName ? (
+                <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: 8, flex: 1 }}><input type="text" className="form-control" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: "6px 12px" }} autoFocus /><button className="btn btn-primary" onClick={() => { if(newName.trim()) onRenameCat(catName, newName.trim()); setIsEditingName(false); }}>保存</button></div>
+              ) : (
+                <span style={{ fontSize: 16, fontWeight: 700, flex: 1 }}>{catName}</span>
+              )}
+              <div style={{ display: "flex", gap: 8 }} onClick={e => e.stopPropagation()}>
+                {level > 0 && <button className="btn btn-outline" onClick={() => onMoveFolder(catName, null)}>⬆️ 外へ</button>}
+                <button className="btn btn-primary" onClick={() => { onAddTemplate(catName); setIsOpen(true); }}>➕ 追加</button>
+                <button className="btn btn-ghost" onClick={() => setIsEditingName(true)}>✏️</button>
+                <button className="btn btn-danger-ghost" onClick={() => onDeleteCat(catName)}>🗑️</button>
               </div>
             </div>
-
             {isOpen && (
-              <div style={{ padding: "20px", background: "#f8f9fa" }}>
+              <div className="card-body" style={{ background: "#F9FAFB", paddingTop: "20px" }}>
                 {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} level={level + 1} />)}
                 {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />)}
+                {childFolders.length === 0 && childTemplates.length === 0 && <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 13, padding: "20px", border: "1px dashed var(--border)", borderRadius: "8px", background: "#fff" }}>空のフォルダです</div>}
               </div>
             )}
           </div>
@@ -370,22 +392,16 @@
       const [categories, setCategories] = useState(null); 
       const [templates, setTemplates] = useState(null);
       const [search, setSearch] = useState("");
-      
       const [forceOpenId, setForceOpenId] = useState(null);
       
       useEffect(() => {
         const unsubCat = db.collection('mailApp').doc('categories').onSnapshot(doc => {
-          if (doc.exists) { setCategories(doc.data().data); } 
-          else { db.collection('mailApp').doc('categories').set({ data: INITIAL_CATEGORIES }); }
+          if (doc.exists) setCategories(doc.data().data);
         });
-
         const unsubTemp = db.collection('mailTemplates').onSnapshot(snap => {
-          if (snap.empty) {
-            INITIAL_TEMPLATES.forEach(t => { db.collection('mailTemplates').doc(t.id.toString()).set(t); });
-          } else {
+          if (!snap.empty) {
             const temps = snap.docs.map(doc => doc.data());
-            temps.sort((a,b) => b.id - a.id); 
-            setTemplates(temps);
+            temps.sort((a,b) => b.id - a.id); setTemplates(temps);
           }
         });
         return () => { unsubCat(); unsubTemp(); };
@@ -396,29 +412,24 @@
         setTimeout(() => {
           const element = document.getElementById(`file-card-${targetId}`);
           if (element) {
-            // スクロール時に画面上部に少し余白ができるように調整
-            const y = element.getBoundingClientRect().top + window.scrollY - 100;
+            const y = element.getBoundingClientRect().top + window.scrollY - 120;
             window.scrollTo({ top: y, behavior: 'smooth' });
             setTimeout(() => setForceOpenId(null), 1500);
-          } else {
-            alert("指定されたファイルが見つかりません。");
-          }
+          } else { alert("指定されたファイルが見つかりません。"); }
         }, 300);
       };
 
       const searchResultTemplates = useMemo(() => {
-        if (!search || !templates) return []; 
-        const q = search.toLowerCase();
+        if (!search || !templates) return []; const q = search.toLowerCase();
         return templates.filter(t => t.title.toLowerCase().includes(q) || (t.ja && t.ja.toLowerCase().includes(q)) || (t.en && t.en.toLowerCase().includes(q)) || (t.flow && t.flow.toLowerCase().includes(q)));
       }, [templates, search]);
 
       const rootFolders = useMemo(() => {
-        if (!categories) return [];
-        return categories.filter(c => c.parent === null);
+        if (!categories) return []; return categories.filter(c => c.parent === null);
       }, [categories]);
 
       if (!categories || !templates) {
-        return <div style={{textAlign: "center", marginTop: "100px", color: "#666", fontSize: "16px", fontWeight: "bold", fontFamily: "sans-serif"}}>☁️ クラウド同期中...</div>;
+        return <div style={{textAlign: "center", marginTop: "150px", color: "var(--text-muted)", fontSize: "16px", fontWeight: "bold"}}>☁️ システムを読み込み中...</div>;
       }
 
       const updateCats = (newCats) => db.collection('mailApp').doc('categories').set({ data: newCats });
@@ -465,25 +476,23 @@
 
       return (
         <div>
-          {/* ★ ヘッダーの横幅を拡大！ maxWidth: 1000px に */}
-          <div style={{ background: "#1a1a2e", color: "#fff", padding: "24px 24px 20px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(0,0,0,.2)" }}>
+          <header className="app-header">
             <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: ".02em" }}>📨 クラウドメール管理システム</h1>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button onClick={() => handleAddCategory("folder")} style={{ background: "transparent", color: "#4fc3f7", border: "1px solid #4fc3f7", padding: "8px 14px", borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>📂 フォルダ追加</button>
-                  <button onClick={() => handleAddCategory("section")} style={{ background: "transparent", color: "#f0a500", border: "1px solid #f0a500", padding: "8px 14px", borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>➖ 区切り線</button>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <h1 className="app-title">📨 テンプレ管理システム</h1>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button className="btn btn-outline" onClick={() => handleAddCategory("folder")}>📂 フォルダ追加</button>
+                  <button className="btn btn-outline" onClick={() => handleAddCategory("section")}>➖ 区切り線</button>
                 </div>
               </div>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 キーワードで検索" style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "none", fontSize: 16, outline: "none", boxSizing: "border-box", background: "#2a2a4a", color: "#fff" }} />
+              <input className="search-input" value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 キーワードで検索（タイトル、本文、流れ）" />
             </div>
-          </div>
+          </header>
 
-          {/* ★ メインエリアの横幅も拡大！ maxWidth: 1000px に */}
-          <div style={{ maxWidth: 1000, margin: "0 auto", padding: "30px 16px 80px" }}>
+          <main style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 24px 100px" }}>
             {search ? (
               <div>
-                <p style={{ fontSize: 15, color: "#666", marginBottom: 16 }}>検索結果: {searchResultTemplates.length} 件</p>
+                <p style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 20, fontWeight: "bold" }}>検索結果: {searchResultTemplates.length} 件</p>
                 {searchResultTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} allTemplates={templates} onUpdate={handleUpdateTemplate} onDelete={handleDeleteTemplate} onLinkClick={handleLinkClick} forceOpenId={forceOpenId} />)}
               </div>
             ) : (
@@ -496,7 +505,7 @@
                 }} label="一番下に移動" />
               </div>
             )}
-          </div>
+          </main>
         </div>
       );
     }
