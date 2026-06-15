@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メールテンプレート管理アプリ（項目タイプ拡張版）</title>
+  <title>メールテンプレート管理アプリ（項目タイプ拡張・修正版）</title>
   
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -32,15 +32,15 @@
 
     const { useState, useMemo, useEffect } = React;
 
-    // 初期状態の項目タイプ（プルダウンの中身）
+    // 初期状態のデータ定義
     const INITIAL_ITEM_TYPES = [
-      { id: "template", name: "テンプレ", viewMode: "text" }, // 日本語・英語
-      { id: "flow", name: "流れ", viewMode: "flow" }          // 対応の流れのみ
+      { id: "template", name: "テンプレ", viewMode: "text" },
+      { id: "flow", name: "流れ", viewMode: "flow" }
     ];
 
     const INITIAL_TEMPLATES = [
-      { id: 1, category: "予約前", tag: "Airbnb", title: "スペシャルオファー", itemType: "template", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n元から料金を比較的安く設定している施設ですので、少しだけであれば可能です！`, en: `Hi\n\nThank you for your inquiry.\n\nSince our facility already has relatively low rates, we can accommodate a small adjustment!`, flow: "値引き額は500円目安。大きい金額は使わない。オプション無料でレビュー満点を狙う場合あり。", flowImage: null },
-      { id: 2, category: "チェックイン", tag: "共通", title: "チェックイン時間の問い合わせ", itemType: "template", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n当施設にフロントはなくセルフチェックインとなりますので、16:00以降はいつでも大丈夫です。\nチェックインの詳細につきましてはマニュアルに記載しておりますので、必ず事前にご確認お願いいたします。\nhttps://マニュアルURL`, en: `Hi,\n\nYou can check in anytime after 16:00 by yourself.`, flow: "", flowImage: null }
+      { id: 1, category: "予約前", tag: "Airbnb", title: "スペシャルオファー", itemType: "テンプレ", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n元から料金を比較的安く設定している施設ですので、少しだけであれば可能です！`, en: `Hi\n\nThank you for your inquiry.\n\nSince our facility already has relatively low rates, we can accommodate a small adjustment!`, flow: "値引き額は500円目安。大きい金額は使わない。オプション無料でレビュー満点を狙う場合あり。", flowImage: null },
+      { id: 2, category: "チェックイン", tag: "共通", title: "チェックイン時間の問い合わせ", itemType: "テンプレ", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n当施設にフロントはなくセルフチェックインとなりますので、16:00以降はいつでも大丈夫です。\nチェックインの詳細につきましてはマニュアルに記載しておりますので、必ず事前にご確認お願いいたします。\nhttps://マニュアルURL`, en: `Hi,\n\nYou can check in anytime after 16:00 by yourself.`, flow: "", flowImage: null }
     ];
 
     const INITIAL_CATEGORIES = [
@@ -48,7 +48,7 @@
       { name: "予約前", parent: "📝 予約〜チェックイン前", type: "folder" },
       { name: "マニュアル未読", parent: "📝 予約〜チェックイン前", type: "folder" },
       { name: "🏨 チェックイン・滞在中", parent: null, type: "section" },
-      { name: "チェックイン", parent: "🏨 チェックイン・滞年中", type: "folder" },
+      { name: "チェックイン", parent: "🏨 チェックイン・滞在中", type: "folder" },
       { name: "その他", parent: null, type: "folder" }
     ];
 
@@ -83,15 +83,12 @@
       const [isEditing, setIsEditing] = useState(false);
       const [editData, setEditData] = useState({ ...t });
 
-      // 現在のファイルの項目タイプ（テンプレか流れか）の設定を取得
       const currentTypeObj = useMemo(() => {
         return itemTypes.find(type => type.name === (t.itemType || "テンプレ")) || itemTypes[0];
       }, [itemTypes, t.itemType]);
 
-      // 表示モード（"text"=日本語英語、"flow"=対応の流れ）を自動判定
       const viewMode = currentTypeObj ? currentTypeObj.viewMode : "text";
 
-      // タブのデフォルト切り替え制御
       useEffect(() => {
         if (viewMode === "flow") { setLang("flow"); } 
         else if (lang === "flow") { setLang("ja"); }
@@ -138,7 +135,6 @@
                 <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>タグ</label>
                 <input type="text" value={editData.tag} onChange={e => setEditData({...editData, tag: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
               </div>
-              {/* ★項目タイプの切り替えプルダウンメニュー */}
               <div style={{ width: "140px" }}>
                 <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>項目タイプ</label>
                 <select value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", background: "#fff" }}>
@@ -181,7 +177,6 @@
             <span style={{ background: tagColor(t.tag), color: "#fff", borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{t.tag}</span>
             <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{t.title}</span>
             
-            {/* 項目バッジの表示 */}
             <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: viewMode === "flow" ? "#fffbf0" : "#f0f0f4", color: viewMode === "flow" ? "#b78103" : "#666", fontWeight: "bold", border: viewMode === "flow" ? "1px solid #f0a500" : "1px solid #ddd" }}>
               {t.itemType || "テンプレ"}
             </span>
@@ -195,22 +190,19 @@
 
           {open && (
             <div style={{ padding: "0 16px 14px", borderTop: "1px solid #f0f0f0" }}>
-              {/* ★ タイプによって表示を切り替え */}
               {viewMode === "flow" ? (
-                // ▼ 流れモード（対応の流れを最初から大画面表示）
                 <div style={{ marginTop: 12 }}>
                   <div style={{ fontSize: 11, color: "#7a5800", fontWeight: "bold", marginBottom: 4 }}>📋 対応の流れ・社内マニュアル</div>
                   <pre style={{ background: "#fffbf0", border: "1px solid #f0e6d2", borderRadius: 6, padding: "12px 14px", fontSize: 13, lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "#222", fontFamily: "inherit" }}>
                     {t.flow || "（流れのテキストは登録されていません）"}
                   </pre>
                   {t.flowImage && (
-                    <div style={{ marginTop: 12, textAlign: "center" }}>
+                    <div style={{ marginTop: 12, textAlignment: "center" }}>
                       <img src={t.flowImage} style={{ maxWidth: "100%", maxHeight: "300px", borderRadius: "6px" }} />
                     </div>
                   )}
                 </div>
               ) : (
-                // ▼ テンプレモード（日本語・英語のコピー画面）
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, marginBottom: 8 }}>
                     <button onClick={() => setLang("ja")} style={{ padding: "4px 14px", borderRadius: 20, border: "1.5px solid", borderColor: lang === "ja" ? "#1a1a2e" : "#ddd", background: lang === "ja" ? "#1a1a2e" : "#fff", color: lang === "ja" ? "#fff" : "#555", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>🇯🇵 日本語</button>
@@ -304,14 +296,14 @@
     function App() {
       const [categories, setCategories] = useState(null); 
       const [templates, setTemplates] = useState(null);
-      const [itemTypes, setItemTypes] = useState(null); // ★追加した項目タイプの管理状態
+      const [itemTypes, setItemTypes] = useState(null); 
       const [search, setSearch] = useState("");
       const [showTypeManager, setShowTypeManager] = useState(false);
       const [newTypeName, setNewTypeName] = useState("");
       const [newTypeMode, setNewTypeMode] = useState("text");
 
+      // ★ 修正箇所：Reactのフックの設計ルールに従い、すべてを安全に読み込みます
       useEffect(() => {
-        // 項目種類のリアルタイム取得
         const unsubTypes = db.collection('mailApp').doc('itemTypes').onSnapshot(doc => {
           if (doc.exists) { setItemTypes(doc.data().data); } 
           else { db.collection('mailApp').doc('itemTypes').set({ data: INITIAL_ITEM_TYPES }); }
@@ -334,14 +326,31 @@
         return () => { unsubTypes(); unsubCat(); unsubTemp(); };
       }, []);
 
+      // 検索フィルタ用
+      const searchResultTemplates = useMemo(() => {
+        if (!search || !templates) return []; 
+        const q = search.toLowerCase();
+        return templates.filter(t => t.title.toLowerCase().includes(q) || t.ja.toLowerCase().includes(q) || t.en.toLowerCase().includes(q) || t.tag.toLowerCase().includes(q) || (t.flow && t.flow.toLowerCase().includes(q)));
+      }, [templates, search]);
+
+      const rootFolders = useMemo(() => {
+        if (!categories) return [];
+        return categories.filter(c => c.parent === null);
+      }, [categories]);
+
+      // クラウドと通信できるまではローディング画面
       if (!categories || !templates || !itemTypes) {
-        return <div style={{textAlign: "center", marginTop: "100px", color: "#666", fontWeight: "bold"}}>☁️ クラウド同期中...</div>;
+        return (
+          <div style={{textAlign: "center", marginTop: "100px", color: "#666", fontWeight: "bold", fontFamily: "sans-serif"}}>
+            ☁️ クラウド同期中...<br/>
+            <span style={{fontSize: 12, fontWeight: "normal", display: "block", marginTop: 10}}>（フリーズしている場合はFirebaseの「テストモード」の設定を確認してください）</span>
+          </div>
+        );
       }
 
       const updateCats = (newCats) => db.collection('mailApp').doc('categories').set({ data: newCats });
       const updateTypes = (newTypes) => db.collection('mailApp').doc('itemTypes').set({ data: newTypes });
 
-      // 項目タイプの新規追加
       const handleAddItemType = () => {
         if(!newTypeName.trim()) return;
         if(itemTypes.some(t => t.name === newTypeName.trim())) { alert("既に同じ名前の種類が存在します。"); return; }
@@ -350,7 +359,6 @@
         setNewTypeName("");
       };
 
-      // 項目タイプの削除
       const handleDeleteItemType = (id, name) => {
         if(name === "テンプレ" || name === "流れ") { alert("基本の種類は削除できません。"); return; }
         if(!confirm(`「${name}」の種類を削除しますか？`)) return;
@@ -397,11 +405,6 @@
         arr.splice(arr.findIndex(c => c.name === targetName), 0, draggedObj); updateCats(arr);
       };
 
-      const searchResultTemplates = useMemo(() => {
-        if (!search) return []; const q = search.toLowerCase();
-        return templates.filter(t => t.title.toLowerCase().includes(q) || t.ja.toLowerCase().includes(q) || t.en.toLowerCase().includes(q) || t.tag.toLowerCase().includes(q) || (t.flow && t.flow.toLowerCase().includes(q)));
-      }, [templates, search]);
-
       return (
         <div>
           <div style={{ background: "#1a1a2e", color: "#fff", padding: "20px 20px 16px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 10px rgba(0,0,0,.2)" }}>
@@ -419,7 +422,6 @@
           </div>
 
           <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 12px 60px" }}>
-            {/* ★ 項目タイプ管理パネル */}
             {showTypeManager && (
               <div style={{ background: "#fff", padding: "16px", borderRadius: 10, marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,.1)", border: "1px solid #ddd" }}>
                 <h3 style={{ margin: "0 0 12px", fontSize: 14 }}>⚙️ ファイル種類（項目タイプ）の追加・管理</h3>
@@ -451,7 +453,7 @@
               </div>
             ) : (
               <div>
-                {categories.filter(c => c.parent === null).map(cat => (
+                {rootFolders.map(cat => (
                   <FolderSection key={cat.name} catObj={cat} categories={categories} templates={templates} itemTypes={itemTypes} onMoveTemplate={handleMoveTemplate} onMoveFolder={handleMoveFolder} onReorderCategory={handleReorderCategory} onRenameCat={handleRenameCategory} onDeleteCat={handleDeleteCategory} onAddTemplate={handleAddTemplate} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} level={0} />
                 ))}
               </div>
