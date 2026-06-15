@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メールテンプレート管理アプリ（項目タイプ切替版）</title>
+  <title>メールテンプレート管理アプリ（初期フォルダ閉じ版）</title>
   
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -32,7 +32,6 @@
 
     const { useState, useMemo, useEffect } = React;
 
-    // クラウド側の初期データを新しい仕様（itemTypeをベースに）に書き換えます
     const INITIAL_TEMPLATES = [
       { id: 1, category: "予約前", itemType: "テンプレ", title: "スペシャルオファー", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n元から料金を比較的安く設定している施設ですので、少しだけであれば可能です！`, en: `Hi\n\nThank you for your inquiry.\n\nSince our facility already has relatively low rates, we can accommodate a small adjustment!`, flow: "値引き額は500円目安。大きい金額は使わない。オプション無料でレビュー満点を狙う場合あり。", flowImage: null },
       { id: 2, category: "マニュアル未読", itemType: "流れ", title: "マニュアル未読 チェックの流れ", ja: "", en: "", flow: "1. ゲスト一覧から未読者を抽出する\n2. 2日前になっても未入力の場合は催促①を送信\n3. 前日になっても未入力の場合は催促②を送信", flowImage: null },
@@ -49,7 +48,6 @@
       { name: "URLが見れない", parent: "📝 予約〜チェックイン前", type: "folder" }
     ];
 
-    // ★ 種類ごとの色設定（テンプレ＝いつもの緑、流れ＝注意を促すオレンジ）
     const TYPE_COLORS = {
       "テンプレ": "#4A7C6F",
       "流れ": "#f0a500"
@@ -83,7 +81,6 @@
       const [isEditing, setIsEditing] = useState(false);
       const [editData, setEditData] = useState({ ...t });
 
-      // ファイルの種類（テンプレ or 流れ）
       const viewMode = t.itemType === "流れ" ? "flow" : "text";
 
       useEffect(() => {
@@ -128,7 +125,6 @@
                 <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>タイトル</label>
                 <input type="text" value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", boxSizing: "border-box" }} />
               </div>
-              {/* ★ここを「タグ」から「項目タイプ（プルダウン）」へ変更しました！ */}
               <div style={{ width: "140px" }}>
                 <label style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>項目タイプ</label>
                 <select value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #ccc", background: "#fff", fontWeight: "bold" }}>
@@ -167,12 +163,9 @@
         <div draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"} style={{ background: "#fff", borderRadius: 10, border: "1px solid #e8e8e8", marginBottom: 10, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
           <div onClick={() => setOpen(!open)} style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none", background: open ? "#fafafa" : "#fff" }}>
             <span style={{ fontSize: 16, cursor: "grab", color: "#ccc" }}>☰</span>
-            
-            {/* ★ここが「テンプレ」か「流れ」のバッジに切り替わります！ */}
             <span style={{ background: TYPE_COLORS[t.itemType || "テンプレ"], color: "#fff", borderRadius: 4, padding: "2px 12px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
               {t.itemType || "テンプレ"}
             </span>
-            
             <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{t.title}</span>
 
             <div style={{ display: "flex", gap: 6 }} onClick={e => e.stopPropagation()}>
@@ -185,7 +178,6 @@
           {open && (
             <div style={{ padding: "0 16px 14px", borderTop: "1px solid #f0f0f0" }}>
               {viewMode === "flow" ? (
-                // ▼ 「流れ」モード：日本語英語は非表示で、対応の流れだけを表示
                 <div style={{ marginTop: 12 }}>
                   <pre style={{ background: "#fffbf0", border: "1px solid #f0e6d2", borderRadius: 6, padding: "12px 14px", fontSize: 13, lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "#222", fontFamily: "inherit" }}>
                     {t.flow || "（流れのテキストは登録されていません）"}
@@ -197,7 +189,6 @@
                   )}
                 </div>
               ) : (
-                // ▼ 「テンプレ」モード：日本語・英語のみ表示（対応の流れは非表示）
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, marginBottom: 8 }}>
                     <button onClick={() => setLang("ja")} style={{ padding: "4px 14px", borderRadius: 20, border: "1.5px solid", borderColor: lang === "ja" ? "#1a1a2e" : "#ddd", background: lang === "ja" ? "#1a1a2e" : "#fff", color: lang === "ja" ? "#fff" : "#555", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>🇯🇵 日本語</button>
@@ -218,7 +209,10 @@
     // ＝＝＝ フォルダ（大項目）＆ 区切り線 コンポーネント ＝＝＝
     function FolderSection({ catObj, categories, templates, onMoveTemplate, onMoveFolder, onReorderCategory, onRenameCat, onDeleteCat, onAddTemplate, onUpdateTemplate, onDeleteTemplate, level = 0 }) {
       const catName = catObj.name;
-      const [isOpen, setIsOpen] = useState(true);
+      
+      // ★ここを「true（最初から開く）」から「false（最初は閉じておく）」に変更しました！
+      const [isOpen, setIsOpen] = useState(false);
+      
       const [isEditingName, setIsEditingName] = useState(false);
       const [newName, setNewName] = useState(catName);
 
@@ -232,8 +226,7 @@
         return (
           <div style={{ marginTop: 80, marginBottom: 24 }}>
             <DropZone onDrop={(draggedName) => onReorderCategory(draggedName, catName)} label="ここに移動" />
-            <div draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "3px solid #1a1a2e", paddingBottom: "8px", marginBottom: "16px", cursor: "grab" }}
-            >
+            <div draggable={!isEditingName} onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDropInside} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "3px solid #1a1a2e", paddingBottom: "8px", marginBottom: "16px", cursor: "grab" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 16, color: "#ccc" }}>☰</span>
                 {isEditingName ? (
