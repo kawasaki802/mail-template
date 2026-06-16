@@ -173,12 +173,12 @@
     const { useState, useMemo, useEffect } = React;
 
     const INITIAL_TEMPLATES = [
-      { id: 1, category: "予約前", itemType: "テンプレ", title: "スペシャルオファー", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n元から料金を比較的安く設定している施設ですので、少しだけであれば可能です！`, en: `Hi\n\nThank you for your inquiry.\n\nSince our facility already has relatively low rates, we can accommodate a small adjustment!`, flow: "値引き額は500円目安。大きい金額は使わない。オプション無料でレビュー満点を狙う場合あり。", flowImage: null },
-      { id: 2, category: "マニュアル未読", itemType: "流れ", title: "マニュアル未読 チェックの流れ", ja: "", en: "", flow: "【★テスト用リンクを繋いであります】\n1. ゲスト一覧から未読者を抽出する\n2. 2日前になっても未入力の場合は [リンク:5] を送信する。\n3. 前日になっても未入力の場合は [リンク:4] を送信する。\n4. それでも反応がない場合は [リンク:3] を送信する。", flowImage: null },
-      { id: 3, category: "マニュアル未読", itemType: "テンプレ", title: "ハウスルール未同意 催促①", ja: `お世話になっております。\n\n宿泊者名簿のご入力ありがとうございます。\nまだハウスルールの同意が完了していないようです。`, en: `Hello!\n\nThank you for filling out the guest list.\nBut it looks like you haven't yet agreed to the house rules.`, flow: "", flowImage: null },
-      { id: 4, category: "マニュアル未読", itemType: "テンプレ", title: "催促②", ja: `※重要なお知らせ※\nこんにちは。\n\nURLは確認されましたか？`, en: `※Important Notice※\nHello.\n\nHave you checked the URL?`, flow: "", flowImage: null },
-      { id: 5, category: "マニュアル未読", itemType: "テンプレ", title: "催促①（セルフチェックイン案内）", ja: `※セルフチェックインのご案内※\nこの度は当施設をご予約いただきありがとうございます。`, en: `※Self Check-in Information※\n\nThank you for booking with us.`, flow: "", flowImage: null },
-      { id: 6, category: "URLが見れない", itemType: "テンプレ", title: "メールアドレス確認・再送依頼", ja: `お問い合わせありがとうございます。\n稀にセキュリティ上、URLが弾かれてしまいURLが消えてしまいます。`, en: `If you made a reservation through an affiliate site such as Agoda, the URL may be deleted.`, flow: "", flowImage: null }
+      { id: 1, category: "予約前", itemType: "テンプレ", title: "スペシャルオファー", ja: `お世話になっております。\nお問い合わせいただき、ありがとうございます。\n\n元から料金を比較的安く設定している施設ですので、少しだけであれば可能です！`, en: `Hi\n\nThank you for your inquiry.\n\nSince our facility already has relatively low rates, we can accommodate a small adjustment!`, flow: "値引き額は500円目安。大きい金額は使わない。オプション無料でレビュー満点を狙う場合あり。", flowImage: null, order: 1 },
+      { id: 2, category: "マニュアル未読", itemType: "流れ", title: "マニュアル未読 チェックの流れ", ja: "", en: "", flow: "【★テスト用リンクを繋いであります】\n1. ゲスト一覧から未読者を抽出する\n2. 2日前になっても未入力の場合は [リンク:5] を送信する。\n3. 前日になっても未入力の場合は [リンク:4] を送信する。\n4. それでも反応がない場合は [リンク:3] を送信する。", flowImage: null, order: 1 },
+      { id: 3, category: "マニュアル未読", itemType: "テンプレ", title: "ハウスルール未同意 催促①", ja: `お世話になっております。\n\n宿泊者名簿のご入力ありがとうございます。\nまだハウスルールの同意が完了していないようです。`, en: `Hello!\n\nThank you for filling out the guest list.\nBut it looks like you haven't yet agreed to the house rules.`, flow: "", flowImage: null, order: 2 },
+      { id: 4, category: "マニュアル未読", itemType: "テンプレ", title: "催促②", ja: `※重要なお知らせ※\nこんにちは。\n\nURLは確認されましたか？`, en: `※Important Notice※\nHello.\n\nHave you checked the URL?`, flow: "", flowImage: null, order: 3 },
+      { id: 5, category: "マニュアル未読", itemType: "テンプレ", title: "催促①（セルフチェックイン案内）", ja: `※セルフチェックインのご案内※\nこの度は当施設をご予約いただきありがとうございます。`, en: `※Self Check-in Information※\n\nThank you for booking with us.`, flow: "", flowImage: null, order: 4 },
+      { id: 6, category: "URLが見れない", itemType: "テンプレ", title: "メールアドレス確認・再送依頼", ja: `お問い合わせありがとうございます。\n稀にセキュリティ上、URLが弾かれてしまいURLが消えてしまいます。`, en: `If you made a reservation through an affiliate site such as Agoda, the URL may be deleted.`, flow: "", flowImage: null, order: 1 }
     ];
 
     const INITIAL_CATEGORIES = [
@@ -207,6 +207,21 @@
           onDragOver={e => { e.preventDefault(); e.stopPropagation(); setIsOver(true); }}
           onDragLeave={e => { e.stopPropagation(); setIsOver(false); }}
           onDrop={e => { e.preventDefault(); e.stopPropagation(); setIsOver(false); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); if(data.type === 'category') onDrop(data.name); } catch(err){} }}
+        >
+          {isOver && <span className="drop-zone-text">{label || "ここに移動"}</span>}
+        </div>
+      );
+    }
+
+    // ★ ファイル（テンプレート）並び替え用のドロップゾーン
+    function FileDropZone({ onDrop, label }) {
+      const [isOver, setIsOver] = useState(false);
+      return (
+        <div
+          className={`drop-zone ${isOver ? 'active' : ''}`}
+          onDragOver={e => { e.preventDefault(); e.stopPropagation(); setIsOver(true); }}
+          onDragLeave={e => { e.stopPropagation(); setIsOver(false); }}
+          onDrop={e => { e.preventDefault(); e.stopPropagation(); setIsOver(false); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); if(data.type === 'template') onDrop(data.id); } catch(err){} }}
         >
           {isOver && <span className="drop-zone-text">{label || "ここに移動"}</span>}
         </div>
@@ -277,11 +292,10 @@
                 <label className="form-label">タイトル</label>
                 <input type="text" className="form-control" value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} />
               </div>
-              {/* ※タグの入力欄を完全に削除しました */}
               <div style={{ width: "180px" }}>
                 <label className="form-label">項目タイプ</label>
                 <select className="form-control" value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})} style={{fontWeight: "bold"}}>
-                  <option value="テンプレ">テンプレ</option><option value="流れ">流れ</option>
+                  <option value="テンプレ">テンプレ</option><option value="流れ</option>
                 </select>
               </div>
             </div>
@@ -362,14 +376,19 @@
     }
 
     // ＝＝＝ フォルダ＆セクション ＝＝＝
-    function FolderSection({ catObj, categories, templates, allTemplates, onMoveTemplate, onMoveFolder, onReorderCategory, onRenameCat, onDeleteCat, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, level = 0 }) {
+    function FolderSection({ catObj, categories, templates, allTemplates, onMoveTemplate, onMoveFolder, onReorderCategory, onReorderTemplate, onRenameCat, onDeleteCat, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, level = 0 }) {
       const catName = catObj.name;
       const [isOpen, setIsOpen] = useState(false);
       const [isEditingName, setIsEditingName] = useState(false);
       const [newName, setNewName] = useState(catName);
 
       const childFolders = categories.filter(c => c.parent === catName);
-      const childTemplates = templates.filter(t => t.category === catName);
+      
+      // ★ ファイルを表示する際、orderプロパティでソートをかける
+      const childTemplates = useMemo(() => {
+        const filtered = templates.filter(t => t.category === catName);
+        return [...filtered].sort((a, b) => (a.order || 0) - (b.order || 0));
+      }, [templates, catName]);
 
       const containsTarget = useMemo(() => {
         if (!forceOpenId) return false;
@@ -405,9 +424,19 @@
               </div>
             </div>
             <div style={{ paddingLeft: "12px" }}>
-              {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} level={level + 1} />)}
+              {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onReorderTemplate={onReorderTemplate} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} level={level + 1} />)}
               {childFolders.length > 0 && <DropZone onDrop={(draggedName) => onMoveFolder(draggedName, catName)} label="の一番下に移動" />}
-              {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />)}
+              
+              {/* ★ セクション直下のファイル用ドロップゾーンと並び替えループ */}
+              {childTemplates.map((t, index) => (
+                <React.Fragment key={t.id}>
+                  <FileDropZone onDrop={(draggedId) => onReorderTemplate(draggedId, t.id, catName, 'before')} label="ファイル順序を入れ替え" />
+                  <TemplateCard t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />
+                </React.Fragment>
+              ))}
+              {childTemplates.length > 0 && (
+                <FileDropZone onDrop={(draggedId) => onReorderTemplate(draggedId, childTemplates[childTemplates.length - 1].id, catName, 'after')} label="ファイルの一番下に移動" />
+              )}
             </div>
           </div>
         );
@@ -434,8 +463,19 @@
             </div>
             {isOpen && (
               <div className="card-body" style={{ background: "var(--bg-color)", paddingTop: "24px" }}>
-                {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} level={level + 1} />)}
-                {childTemplates.map(t => <TemplateCard key={t.id} t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />)}
+                {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveTemplate={onMoveTemplate} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onReorderTemplate={onReorderTemplate} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} level={level + 1} />)}
+                
+                {/* ★ フォルダ内のファイル用ドロップゾーンと並び替えループ */}
+                {childTemplates.map((t, index) => (
+                  <React.Fragment key={t.id}>
+                    <FileDropZone onDrop={(draggedId) => onReorderTemplate(draggedId, t.id, catName, 'before')} label="ファイル順序を入れ替え" />
+                    <TemplateCard t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />
+                  </React.Fragment>
+                ))}
+                {childTemplates.length > 0 && (
+                  <FileDropZone onDrop={(draggedId) => onReorderTemplate(draggedId, childTemplates[childTemplates.length - 1].id, catName, 'after')} label="ファイルの一番下に移動" />
+                )}
+
                 {childFolders.length === 0 && childTemplates.length === 0 && <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 15, padding: "24px", border: "1px dashed var(--border)", borderRadius: "10px", background: "var(--card-bg)" }}>空のフォルダです。ここにファイルを追加してください。</div>}
               </div>
             )}
@@ -451,10 +491,8 @@
       const [search, setSearch] = useState("");
       const [forceOpenId, setForceOpenId] = useState(null);
       
-      // ★ テーマ切り替えのステート（ブラウザに記憶させます）
       const [theme, setTheme] = useState(localStorage.getItem('app_theme') || 'matcha');
 
-      // テーマが変更されたらHTML全体に適用する
       useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('app_theme', theme);
@@ -475,7 +513,8 @@
             INITIAL_TEMPLATES.forEach(t => { db.collection('mailTemplates').doc(t.id.toString()).set(t); });
           } else {
             const temps = snap.docs.map(doc => doc.data());
-            temps.sort((a,b) => b.id - a.id); setTemplates(temps);
+            // ★ 初期ロードのソートは行わず、各FolderSectionコンポーネント内で order 順にソートします
+            setTemplates(temps);
           }
         });
         return () => { unsubCat(); unsubTemp(); };
@@ -530,10 +569,19 @@
 
       const handleAddTemplate = (catName) => {
         const newId = templates.length > 0 ? Math.max(...templates.map(t => t.id)) + 1 : 1;
-        db.collection('mailTemplates').doc(newId.toString()).set({ id: newId, category: catName, itemType: "テンプレ", title: "新規ファイル", ja: "", en: "", flow: "", flowImage: null });
+        // 新しいフォルダ内の最大orderを取得して+1する
+        const folderTemps = templates.filter(t => t.category === catName);
+        const maxOrder = folderTemps.length > 0 ? Math.max(...folderTemps.map(t => t.order || 0)) : 0;
+        
+        db.collection('mailTemplates').doc(newId.toString()).set({ id: newId, category: catName, itemType: "テンプレ", title: "新規ファイル", ja: "", en: "", flow: "", flowImage: null, order: maxOrder + 1 });
       };
 
-      const handleMoveTemplate = (id, targetCategory) => db.collection('mailTemplates').doc(id.toString()).update({ category: targetCategory });
+      const handleMoveTemplate = (id, targetCategory) => {
+        // 別フォルダから移動してきた場合も、そのフォルダ内の末尾のorderを付与する
+        const folderTemps = templates.filter(t => t.category === targetCategory);
+        const maxOrder = folderTemps.length > 0 ? Math.max(...folderTemps.map(t => t.order || 0)) : 0;
+        db.collection('mailTemplates').doc(id.toString()).update({ category: targetCategory, order: maxOrder + 1 });
+      };
       
       const handleMoveFolder = (folderName, newParentName) => {
         const arr = [...categories]; const idx = arr.findIndex(c => c.name === folderName); if(idx === -1) return;
@@ -546,6 +594,37 @@
         if (dIdx === -1 || tIdx === -1) return;
         const draggedObj = arr.splice(dIdx, 1)[0]; draggedObj.parent = arr[tIdx < dIdx ? tIdx : tIdx - 1].parent;
         arr.splice(arr.findIndex(c => c.name === targetName), 0, draggedObj); updateCats(arr);
+      };
+
+      // ★ ファイルの並び替え関数を追加
+      const handleReorderTemplate = (draggedId, targetId, categoryName, position) => {
+        if (draggedId === targetId) return;
+
+        // 同じフォルダ内のファイルだけを対象に順序を再計算する
+        const folderTemplates = templates
+          .filter(t => t.category === categoryName)
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        const draggedItem = templates.find(t => t.id === draggedId);
+        if (!draggedItem) return;
+
+        // 一旦リストからドラッグしたアイテムを除外
+        let reordered = folderTemplates.filter(t => t.id !== draggedId);
+        
+        // ターゲットの位置を見つけて、その前か後に挿入
+        const targetIndex = reordered.findIndex(t => t.id === targetId);
+        if (targetIndex === -1) return;
+
+        const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
+        reordered.splice(insertIndex, 0, { ...draggedItem, category: categoryName });
+
+        // Firestoreのバッチ処理を利用して、全てのファイルのorderを上書き保存
+        const batch = db.batch();
+        reordered.forEach((item, index) => {
+          const ref = db.collection('mailTemplates').doc(item.id.toString());
+          batch.update(ref, { order: index + 1, category: categoryName });
+        });
+        batch.commit().catch(err => console.error("並び替え保存エラー:", err));
       };
 
       return (
@@ -573,7 +652,7 @@
             ) : (
               <div>
                 {rootFolders.map(cat => (
-                  <FolderSection key={cat.name} catObj={cat} categories={categories} templates={templates} allTemplates={templates} onMoveTemplate={handleMoveTemplate} onMoveFolder={handleMoveFolder} onReorderCategory={handleReorderCategory} onRenameCat={handleRenameCategory} onDeleteCat={handleDeleteCategory} onAddTemplate={handleAddTemplate} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} onLinkClick={handleLinkClick} forceOpenId={forceOpenId} level={0} />
+                  <FolderSection key={cat.name} catObj={cat} categories={categories} templates={templates} allTemplates={templates} onMoveTemplate={handleMoveTemplate} onMoveFolder={handleMoveFolder} onReorderCategory={handleReorderCategory} onReorderTemplate={handleReorderTemplate} onRenameCat={handleRenameCategory} onDeleteCat={handleDeleteCategory} onAddTemplate={handleAddTemplate} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} onLinkClick={handleLinkClick} forceOpenId={forceOpenId} level={0} />
                 ))}
                 <DropZone onDrop={(draggedName) => {
                   const arr = [...categories]; const dIdx = arr.findIndex(c => c.name === draggedName); const obj = arr.splice(dIdx, 1)[0]; obj.parent = null; arr.push(obj); updateCats(arr);
