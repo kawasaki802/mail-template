@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メールテンプレート管理システム（エラー対策・バッジ復旧版）</title>
+  <title>メールテンプレート管理システム</title>
   
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
 
   <style>
     :root {
@@ -41,7 +39,6 @@
     body { margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-main); font-family: sans-serif; transition: background-color 0.3s ease; }
     .app-header { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 16px 28px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
     .app-title { margin: 0; font-size: 22px; font-weight: 700; }
-    .search-input { width: 100%; padding: 12px 18px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-color); color: var(--text-main); font-size: 16px; outline: none; box-sizing: border-box; }
     .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: var(--radius-md); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-outline { background: var(--card-bg); border-color: var(--border-strong); color: var(--text-main); }
@@ -57,7 +54,6 @@
     .badge { padding: 6px 16px; border-radius: 24px; font-size: 13px; font-weight: 700; white-space: nowrap; user-select: none; border: 1px solid; }
     .badge-template { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
     .badge-flow { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
-    .badge-platform { border: none; color: #fff; }
     .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--border-strong); padding-bottom: 16px; margin-bottom: 16px; cursor: grab; }
     .section-title { font-size: 26px; font-weight: 800; color: var(--text-main); }
     .link-btn { background: var(--card-bg); color: var(--primary); border: 1px solid var(--primary); border-radius: 6px; padding: 4px 10px; margin: 0 4px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
@@ -68,25 +64,9 @@
   </style>
 </head>
 <body>
-  <div id="root">
-    <div style="text-align: center; margin-top: 150px; color: #7A7A7A;">
-      <h2 style="font-size: 20px;">⚙️ システムを起動しています...（数秒お待ちください）</h2>
-    </div>
-  </div>
+  <div id="root"></div>
 
   <script type="text/babel">
-    // ★ ここが一番怪しい部分です。以前のコードで違う設定が入っていませんでしたか？
-    const firebaseConfig = {
-      apiKey: "AIzaSyBZ7v3kRjAsOGwYdUX_w0FKoGPLUhbR1VQ",
-      authDomain: "mail-template-68598.firebaseapp.com",
-      projectId: "mail-template-68598",
-      storageBucket: "mail-template-68598.firebasestorage.app",
-      messagingSenderId: "475374524236",
-      appId: "1:475374524236:web:b39a70aebc72bb4172e1e9"
-    };
-    
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-    const db = firebase.firestore();
     const { useState, useMemo, useEffect } = React;
 
     const INITIAL_CATEGORIES = [
@@ -132,15 +112,6 @@
       );
     }
 
-    // ★ プラットフォーム（Airbnbなど）の色分け設定
-    const getPlatformColor = (platform) => {
-      if (!platform) return "transparent";
-      if (platform.includes("Airbnb")) return "#FF5A5F";
-      if (platform.includes("Agoda") || platform.includes("Booking")) return "#4A90E2";
-      if (platform.includes("共通")) return "#5C8C73";
-      return "#888888"; // その他
-    };
-
     function TemplateCard({ t, categories, allTemplates, onUpdate, onDelete, onLinkClick, forceOpenId }) {
       const [open, setOpen] = useState(false);
       const [lang, setLang] = useState("ja"); 
@@ -164,10 +135,6 @@
               <div style={{ flex: 2, minWidth: "200px" }}>
                 <label className="form-label">タイトル</label>
                 <input type="text" className="form-control" value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} />
-              </div>
-              <div style={{ width: "160px" }}>
-                <label className="form-label">対応サイト (任意)</label>
-                <input type="text" className="form-control" placeholder="Airbnb, 共通 など" value={editData.platform || ""} onChange={e => setEditData({...editData, platform: e.target.value})} />
               </div>
               <div style={{ width: "140px" }}>
                 <label className="form-label">項目タイプ</label>
@@ -203,10 +170,6 @@
         <div id={`file-card-${t.id}`} className={`card ${forceOpenId === t.id ? 'card-target' : ''}`} draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"}>
           <div className="card-header" onClick={() => setOpen(!open)}>
             <span className="drag-handle">☰</span>
-            {/* ★ 復活したプラットフォームバッジ */}
-            {t.platform && (
-              <span className="badge badge-platform" style={{ backgroundColor: getPlatformColor(t.platform) }}>{t.platform}</span>
-            )}
             <span className={`badge ${t.itemType === '流れ' ? 'badge-flow' : 'badge-template'}`}>{t.itemType || "テンプレ"}</span>
             <span style={{ fontWeight: 600, fontSize: "17px", flex: 1 }}>{t.title}</span>
             <div style={{ display: "flex", gap: 8 }} onClick={e => e.stopPropagation()}>
@@ -237,23 +200,22 @@
       );
     }
 
-    function FolderSection({ catObj, categories, templates, allTemplates, onMoveFolder, onReorderCategory, onRenameCat, onDeleteCat, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, onInsertTemplate, level = 0 }) {
+    function FolderSection({ catObj, categories, templates, allTemplates, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, onInsertTemplate, level = 0 }) {
       const catName = catObj.name;
-      const [isOpen, setIsOpen] = useState(false);
+      const [isOpen, setIsOpen] = useState(true);
       const childFolders = categories.filter(c => c.parent === catName);
       const childTemplates = useMemo(() => templates.filter(t => t.category === catName).sort((a, b) => (a.order || 0) - (b.order || 0)), [templates, catName]);
 
-      const handleSectionDrop = (e) => { e.preventDefault(); e.stopPropagation(); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); if (data.type === "template") { onInsertTemplate(data.id, null, catName); setIsOpen(true); } else if (data.type === "category" && data.name !== catName) { onMoveFolder(data.name, catName); setIsOpen(true); } } catch(err){} };
+      const handleSectionDrop = (e) => { e.preventDefault(); e.stopPropagation(); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); if (data.type === "template") { onInsertTemplate(data.id, null, catName); setIsOpen(true); } } catch(err){} };
 
       if (catObj.type === "section") {
         return (
           <div style={{ marginTop: 60, marginBottom: 36 }}>
-            <DropZone onDrop={(data) => { if(data.type === 'category') onReorderCategory(data.name, catName); }} label="セクションを上に移動" />
-            <div className="section-header" draggable onDragStart={e => e.dataTransfer.setData("text/plain", JSON.stringify({ type: "category", name: catName }))} onDragOver={e => e.preventDefault()} onDrop={handleSectionDrop}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}><span className="drag-handle">☰</span><span className="section-title">{catName}</span></div>
+            <div className="section-header" onDragOver={e => e.preventDefault()} onDrop={handleSectionDrop}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}><span className="section-title">{catName}</span></div>
             </div>
             <div style={{ paddingLeft: "12px" }}>
-              {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} onInsertTemplate={onInsertTemplate} level={level + 1} />)}
+              {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} onInsertTemplate={onInsertTemplate} level={level + 1} />)}
               {childTemplates.map(t => ( <React.Fragment key={t.id}><DropZone onDrop={(data) => { if (data.type === 'template') onInsertTemplate(data.id, t.id, catName); }} label="ここに挿入" /><TemplateCard t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} /></React.Fragment> ))}
               <DropZone onDrop={(data) => { if(data.type === 'template') onInsertTemplate(data.id, null, catName); }} label={`${catName} の一番下に追加`} />
             </div>
@@ -263,9 +225,8 @@
 
       return (
         <div style={{ marginBottom: 18, marginLeft: level > 0 ? "36px" : "0" }}>
-          <DropZone onDrop={(data) => { if(data.type === 'category') onReorderCategory(data.name, catName); }} label="上に移動" />
           <div className="card" style={{ borderLeft: level > 0 ? "5px solid var(--primary)" : "1px solid var(--border)", marginBottom: 0 }}>
-            <div className="card-header" draggable onDragStart={e => e.dataTransfer.setData("text/plain", JSON.stringify({ type: "category", name: catName }))} onDragOver={e => e.preventDefault()} onDrop={handleSectionDrop} onClick={() => setIsOpen(!isOpen)}>
+            <div className="card-header" onDragOver={e => e.preventDefault()} onDrop={handleSectionDrop} onClick={() => setIsOpen(!isOpen)}>
               <span style={{ fontSize: 16, color: "var(--text-muted)", marginRight: 10 }}>{isOpen ? "▼" : "▶"}</span><span style={{ fontSize: 22, marginRight: 8 }}>📂</span><span style={{ fontSize: 17, fontWeight: 700, flex: 1 }}>{catName}</span>
               <div style={{ display: "flex", gap: 10 }} onClick={e => e.stopPropagation()}>
                 <button className="btn btn-primary" onClick={() => { onAddTemplate(catName); setIsOpen(true); }}>➕ 追加</button>
@@ -273,7 +234,7 @@
             </div>
             {isOpen && (
               <div className="card-body" style={{ background: "var(--bg-color)", paddingTop: "24px" }}>
-                {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onMoveFolder={onMoveFolder} onReorderCategory={onReorderCategory} onRenameCat={onRenameCat} onDeleteCat={onDeleteCat} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} onInsertTemplate={onInsertTemplate} level={level + 1} />)}
+                {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} onInsertTemplate={onInsertTemplate} level={level + 1} />)}
                 {childTemplates.map(t => ( <React.Fragment key={t.id}><DropZone onDrop={(data) => { if (data.type === 'template') onInsertTemplate(data.id, t.id, catName); }} label="ここに挿入" /><TemplateCard t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} /></React.Fragment> ))}
                 {(childFolders.length > 0 || childTemplates.length > 0) && <DropZone onDrop={(data) => { if(data.type === 'template') onInsertTemplate(data.id, null, catName); }} label={`${catName} の一番下に追加`} />}
               </div>
@@ -284,97 +245,71 @@
     }
 
     function App() {
-      const [categories, setCategories] = useState(null); 
-      const [templates, setTemplates] = useState(null);
-      const [errorMsg, setErrorMsg] = useState("");
-      
+      // データベース通信を撤廃し、ブラウザのローカル保存に直接つなぎました
+      const [categories, setCategories] = useState(() => {
+        const saved = localStorage.getItem('app_categories');
+        return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
+      });
+      const [templates, setTemplates] = useState(() => {
+        const saved = localStorage.getItem('app_templates');
+        return saved ? JSON.parse(saved) : [];
+      });
+
+      // データが変更されるたびに自動保存
+      useEffect(() => { localStorage.setItem('app_categories', JSON.stringify(categories)); }, [categories]);
+      useEffect(() => { localStorage.setItem('app_templates', JSON.stringify(templates)); }, [templates]);
+
       const [theme, setTheme] = useState(localStorage.getItem('app_theme') || 'matcha');
       useEffect(() => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('app_theme', theme); }, [theme]);
 
-      // ★ データ取得部（エラーを検知して画面に出すように改修）
-      useEffect(() => {
-        try {
-          const unsubCat = db.collection('mailApp').doc('categories').onSnapshot(doc => {
-            if (doc.exists) {
-              const d = doc.data();
-              setCategories(d.data || d.categories || INITIAL_CATEGORIES);
-            } else {
-              setCategories(INITIAL_CATEGORIES);
-            }
-          }, err => {
-            console.error(err);
-            setErrorMsg(`カテゴリデータの取得に失敗しました。\n詳細: ${err.message}`);
-          });
-
-          const unsubTemp = db.collection('mailTemplates').onSnapshot(snap => {
-            if (snap.empty) {
-              setTemplates([]);
-            } else {
-              setTemplates(snap.docs.map(doc => doc.data()));
-            }
-          }, err => {
-            console.error(err);
-            setErrorMsg(`テンプレートデータの取得に失敗しました。\n詳細: ${err.message}`);
-          });
-
-          return () => { unsubCat(); unsubTemp(); };
-        } catch (err) {
-          setErrorMsg(`システムの起動に失敗しました。\n詳細: ${err.message}`);
-        }
-      }, []);
-
-      const updateCats = (newCats) => db.collection('mailApp').doc('categories').set({ data: newCats });
-      const handleUpdateTemplate = (updatedT) => db.collection('mailTemplates').doc(updatedT.id.toString()).set(updatedT);
-      const handleDeleteTemplate = (id) => db.collection('mailTemplates').doc(id.toString()).delete();
-
-      const handleInsertTemplate = (draggedId, targetId, targetCategory) => {
-        const draggedFile = templates.find(t => t.id === draggedId);
-        if (!draggedFile) return;
-        let targetCategoryFiles = templates.filter(t => t.category === targetCategory && t.id !== draggedId).sort((a, b) => (a.order || 0) - (b.order || 0));
-        if (targetId) {
-          const targetIndex = targetCategoryFiles.findIndex(t => t.id === targetId);
-          if (targetIndex !== -1) { targetCategoryFiles.splice(targetIndex, 0, draggedFile); } else { targetCategoryFiles.push(draggedFile); }
-        } else {
-          targetCategoryFiles.push(draggedFile);
-        }
-
-        const batch = db.batch();
-        targetCategoryFiles.forEach((file, index) => {
-          const fileRef = db.collection('mailTemplates').doc(file.id.toString());
-          batch.update(fileRef, { category: targetCategory, order: index + 1 });
-        });
-        if (draggedFile.category !== targetCategory) {
-          const sourceCategoryFiles = templates.filter(t => t.category === draggedFile.category && t.id !== draggedId).sort((a, b) => (a.order || 0) - (b.order || 0));
-          sourceCategoryFiles.forEach((file, index) => {
-            const fileRef = db.collection('mailTemplates').doc(file.id.toString());
-            batch.update(fileRef, { order: index + 1 });
-          });
-        }
-        batch.commit().catch(err => console.error(err));
+      // 追加・更新・削除の処理（ローカルで即時反映されます）
+      const handleAddTemplate = (categoryName) => {
+        const newTemp = { id: Date.now(), title: "新規アイテム", category: categoryName, itemType: "テンプレ", order: 999 };
+        setTemplates(prev => [...prev, newTemp]);
       };
 
-      // 🔴 エラーが発生した場合の画面
-      if (errorMsg) {
-        return (
-          <div style={{ textAlign: "center", marginTop: "100px", padding: "20px" }}>
-            <h2 style={{ color: "#EF4444" }}>⚠️ データベースへの接続エラー</h2>
-            <pre style={{ color: "var(--accent)", background: "var(--accent-light)", padding: "16px", borderRadius: "8px", display: "inline-block", textAlign: "left" }}>{errorMsg}</pre>
-            <div style={{ marginTop: "30px", fontSize: "15px", color: "var(--text-main)", lineHeight: 1.6 }}>
-              <p>前回のアップデートの際、<strong>元のアプリにあった「Firebaseの接続設定（firebaseConfig）」</strong>を上書きして消してしまった可能性があります。</p>
-              <p>お手数ですが、一番最初に使っていた古いバージョンのコードはお手元にございますでしょうか？</p>
-            </div>
-          </div>
-        );
-      }
+      const handleUpdateTemplate = (updatedT) => {
+        setTemplates(prev => {
+          const exists = prev.find(p => p.id === updatedT.id);
+          return exists ? prev.map(p => p.id === updatedT.id ? updatedT : p) : [...prev, updatedT];
+        });
+      };
 
-      // ⏳ ロード中の画面（ここから進まない場合は上のエラーキャッチに引っかかっています）
-      if (!categories || !templates) {
-        return (
-          <div style={{ textAlign: "center", marginTop: "150px" }}>
-            <h2 style={{ color: "var(--text-muted)", fontSize: "20px" }}>⏳ データベースから情報を取得しています...</h2>
-          </div>
-        );
-      }
+      const handleDeleteTemplate = (id) => {
+        setTemplates(prev => prev.filter(p => p.id !== id));
+      };
+
+      const handleInsertTemplate = (draggedId, targetId, targetCategory) => {
+        setTemplates(prev => {
+          let newTemplates = [...prev];
+          const draggedFile = newTemplates.find(t => t.id === draggedId);
+          if (!draggedFile) return prev;
+          
+          newTemplates = newTemplates.filter(t => t.id !== draggedId);
+          const oldCategory = draggedFile.category;
+          draggedFile.category = targetCategory;
+
+          const targetCategoryFiles = newTemplates.filter(t => t.category === targetCategory).sort((a, b) => (a.order || 0) - (b.order || 0));
+          
+          if (targetId) {
+            const targetIndex = targetCategoryFiles.findIndex(t => t.id === targetId);
+            if (targetIndex !== -1) { targetCategoryFiles.splice(targetIndex, 0, draggedFile); } 
+            else { targetCategoryFiles.push(draggedFile); }
+          } else {
+            targetCategoryFiles.push(draggedFile);
+          }
+
+          targetCategoryFiles.forEach((file, index) => { file.order = index + 1; });
+
+          if (oldCategory !== targetCategory) {
+            const sourceCategoryFiles = newTemplates.filter(t => t.category === oldCategory).sort((a, b) => (a.order || 0) - (b.order || 0));
+            sourceCategoryFiles.forEach((file, index) => { file.order = index + 1; });
+          }
+
+          const unchanged = newTemplates.filter(t => t.category !== targetCategory && t.category !== oldCategory);
+          return [...unchanged, ...targetCategoryFiles, ...newTemplates.filter(t => t.category === oldCategory)];
+        });
+      };
 
       const rootFolders = categories.filter(c => c.parent === null);
 
@@ -388,7 +323,7 @@
           </header>
           <main style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 24px 100px" }}>
             {rootFolders.map(cat => (
-              <FolderSection key={cat.name} catObj={cat} categories={categories} templates={templates} allTemplates={templates} onMoveFolder={()=>{}} onReorderCategory={()=>{}} onRenameCat={()=>{}} onDeleteCat={()=>{}} onAddTemplate={()=>{}} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} onLinkClick={()=>{}} forceOpenId={null} onInsertTemplate={handleInsertTemplate} level={0} />
+              <FolderSection key={cat.name} catObj={cat} categories={categories} templates={templates} allTemplates={templates} onAddTemplate={handleAddTemplate} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} onLinkClick={()=>{}} forceOpenId={null} onInsertTemplate={handleInsertTemplate} level={0} />
             ))}
           </main>
         </div>
