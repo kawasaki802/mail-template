@@ -93,16 +93,19 @@
     }
 
     function LinkableText({ text, allTemplates, onLinkClick }) {
-      if (!text) return null;
+      // エラー回避: テキストが存在しない、または文字列でない場合はそのまま返すか非表示にする
+      if (!text || typeof text !== 'string') return null;
+      
       const regex = /\[リンク:(\d+)\]/g;
       if (!regex.test(text)) return <React.Fragment>{text}</React.Fragment>;
-      const parts = text.split(/\[リンク:(\d+)\]/g);
+      
+      const parts = text.split(regex);
       return (
         <React.Fragment>
           {parts.map((part, index) => {
             if (index % 2 === 1) {
               const targetId = Number(part);
-              const targetTemplate = allTemplates.find(t => t.id === targetId);
+              const targetTemplate = (allTemplates || []).find(t => t.id === targetId);
               const title = targetTemplate ? targetTemplate.title : `不明ID:${targetId}`;
               return <button key={index} className="link-btn" onClick={() => onLinkClick(targetId)}>🔗 {title}</button>;
             }
@@ -134,7 +137,7 @@
             <div style={{ display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
               <div style={{ flex: 2, minWidth: "200px" }}>
                 <label className="form-label">タイトル</label>
-                <input type="text" className="form-control" value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} />
+                <input type="text" className="form-control" value={editData.title || ""} onChange={e => setEditData({...editData, title: e.target.value})} />
               </div>
               <div style={{ width: "140px" }}>
                 <label className="form-label">項目タイプ</label>
@@ -171,7 +174,7 @@
           <div className="card-header" onClick={() => setOpen(!open)}>
             <span className="drag-handle">☰</span>
             <span className={`badge ${t.itemType === '流れ' ? 'badge-flow' : 'badge-template'}`}>{t.itemType || "テンプレ"}</span>
-            <span style={{ fontWeight: 600, fontSize: "17px", flex: 1 }}>{t.title}</span>
+            <span style={{ fontWeight: 600, fontSize: "17px", flex: 1 }}>{t.title || "無題"}</span>
             <div style={{ display: "flex", gap: 8 }} onClick={e => e.stopPropagation()}>
               <button className="btn btn-ghost" onClick={() => { setEditData({...t}); setIsEditing(true); setOpen(true); }}>✏️ 編集</button>
               <button className="btn btn-danger-ghost" onClick={() => { if(confirm("削除しますか？")) onDelete(t.id); }}>🗑️ 削除</button>
@@ -182,16 +185,16 @@
             <div className="card-body">
               {viewMode === "flow" ? (
                 <div style={{ paddingTop: "18px" }}>
-                  <pre className="pre-area flow-area"><LinkableText text={t.flow} allTemplates={allTemplates} onLinkClick={onLinkClick} /></pre>
+                  <pre className="pre-area flow-area"><LinkableText text={t.flow || ""} allTemplates={allTemplates} onLinkClick={onLinkClick} /></pre>
                 </div>
               ) : (
                 <div style={{ paddingTop: "18px" }}>
                   <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
                     <button onClick={() => setLang("ja")} className={`btn ${lang === "ja" ? "btn-primary" : "btn-outline"}`}>🇯🇵 日本語</button>
                     <button onClick={() => setLang("en")} className={`btn ${lang === "en" ? "btn-primary" : "btn-outline"}`}>🇬🇧 English</button>
-                    <div style={{ marginLeft: "auto" }}><CopyBtn text={currentText} /></div>
+                    <div style={{ marginLeft: "auto" }}><CopyBtn text={currentText || ""} /></div>
                   </div>
-                  <pre className="pre-area"><LinkableText text={currentText} allTemplates={allTemplates} onLinkClick={onLinkClick} /></pre>
+                  <pre className="pre-area"><LinkableText text={currentText || ""} allTemplates={allTemplates} onLinkClick={onLinkClick} /></pre>
                 </div>
               )}
             </div>
@@ -203,8 +206,13 @@
     function FolderSection({ catObj, categories, templates, allTemplates, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, onInsertTemplate, level = 0 }) {
       const catName = catObj.name;
       const [isOpen, setIsOpen] = useState(true);
-      const childFolders = categories.filter(c => c.parent === catName);
-      const childTemplates = useMemo(() => templates.filter(t => t.category === catName).sort((a, b) => (a.order || 0) - (b.order || 0)), [templates, catName]);
+      
+      // エラー回避: categoriesとtemplatesが確実に配列として扱われるようにする
+      const safeCategories = Array.isArray(categories) ? categories : [];
+      const safeTemplates = Array.isArray(templates) ? templates : [];
+
+      const childFolders = safeCategories.filter(c => c && c.parent === catName);
+      const childTemplates = useMemo(() => safeTemplates.filter(t => t && t.category === catName).sort((a, b) => (a.order || 0) - (b.order || 0)), [safeTemplates, catName]);
 
       const handleSectionDrop = (e) => { e.preventDefault(); e.stopPropagation(); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); if (data.type === "template") { onInsertTemplate(data.id, null, catName); setIsOpen(true); } } catch(err){} };
 
@@ -215,8 +223,8 @@
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}><span className="section-title">{catName}</span></div>
             </div>
             <div style={{ paddingLeft: "12px" }}>
-              {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} onInsertTemplate={onInsertTemplate} level={level + 1} />)}
-              {childTemplates.map(t => ( <React.Fragment key={t.id}><DropZone onDrop={(data) => { if (data.type === 'template') onInsertTemplate(data.id, t.id, catName); }} label="ここに挿入" /><TemplateCard t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} /></React.Fragment> ))}
+              {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={safeCategories} templates={safeTemplates} allTemplates={allTemplates} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} onInsertTemplate={onInsertTemplate} level={level + 1} />)}
+              {childTemplates.map(t => ( <React.Fragment key={t.id}><DropZone onDrop={(data) => { if (data.type === 'template') onInsertTemplate(data.id, t.id, catName); }} label="ここに挿入" /><TemplateCard t={t} categories={safeCategories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} /></React.Fragment> ))}
               <DropZone onDrop={(data) => { if(data.type === 'template') onInsertTemplate(data.id, null, catName); }} label={`${catName} の一番下に追加`} />
             </div>
           </div>
@@ -234,8 +242,8 @@
             </div>
             {isOpen && (
               <div className="card-body" style={{ background: "var(--bg-color)", paddingTop: "24px" }}>
-                {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={categories} templates={templates} allTemplates={allTemplates} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} onInsertTemplate={onInsertTemplate} level={level + 1} />)}
-                {childTemplates.map(t => ( <React.Fragment key={t.id}><DropZone onDrop={(data) => { if (data.type === 'template') onInsertTemplate(data.id, t.id, catName); }} label="ここに挿入" /><TemplateCard t={t} categories={categories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} /></React.Fragment> ))}
+                {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={safeCategories} templates={safeTemplates} allTemplates={allTemplates} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} onInsertTemplate={onInsertTemplate} level={level + 1} />)}
+                {childTemplates.map(t => ( <React.Fragment key={t.id}><DropZone onDrop={(data) => { if (data.type === 'template') onInsertTemplate(data.id, t.id, catName); }} label="ここに挿入" /><TemplateCard t={t} categories={safeCategories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} /></React.Fragment> ))}
                 {(childFolders.length > 0 || childTemplates.length > 0) && <DropZone onDrop={(data) => { if(data.type === 'template') onInsertTemplate(data.id, null, catName); }} label={`${catName} の一番下に追加`} />}
               </div>
             )}
@@ -245,42 +253,63 @@
     }
 
     function App() {
-      // データベース通信を撤廃し、ブラウザのローカル保存に直接つなぎました
+      // データの読み込み時にエラーが起きても確実に初期値に戻す安全対策
       const [categories, setCategories] = useState(() => {
-        const saved = localStorage.getItem('app_categories');
-        return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
-      });
-      const [templates, setTemplates] = useState(() => {
-        const saved = localStorage.getItem('app_templates');
-        return saved ? JSON.parse(saved) : [];
+        try {
+          const saved = localStorage.getItem('app_categories');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) return parsed;
+          }
+        } catch(e) { console.warn("カテゴリデータの読み込みエラー、初期化します"); }
+        return INITIAL_CATEGORIES;
       });
 
-      // データが変更されるたびに自動保存
+      const [templates, setTemplates] = useState(() => {
+        try {
+          const saved = localStorage.getItem('app_templates');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) return parsed;
+          }
+        } catch(e) { console.warn("テンプレートデータの読み込みエラー、初期化します"); }
+        return [];
+      });
+
       useEffect(() => { localStorage.setItem('app_categories', JSON.stringify(categories)); }, [categories]);
       useEffect(() => { localStorage.setItem('app_templates', JSON.stringify(templates)); }, [templates]);
 
       const [theme, setTheme] = useState(localStorage.getItem('app_theme') || 'matcha');
       useEffect(() => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('app_theme', theme); }, [theme]);
 
-      // 追加・更新・削除の処理（ローカルで即時反映されます）
+      // 緊急リセット機能（どうしてもデータがおかしくなった時用）
+      const handleFactoryReset = () => {
+        if(confirm("【警告】すべてのデータを初期化しますか？画面がおかしい場合のみ実行してください。")) {
+          localStorage.clear();
+          window.location.reload();
+        }
+      };
+
       const handleAddTemplate = (categoryName) => {
-        const newTemp = { id: Date.now(), title: "新規アイテム", category: categoryName, itemType: "テンプレ", order: 999 };
-        setTemplates(prev => [...prev, newTemp]);
+        const newTemp = { id: Date.now(), title: "新規アイテム", category: categoryName, itemType: "テンプレ", order: 999, ja: "", en: "", flow: "" };
+        setTemplates(prev => Array.isArray(prev) ? [...prev, newTemp] : [newTemp]);
       };
 
       const handleUpdateTemplate = (updatedT) => {
         setTemplates(prev => {
+          if (!Array.isArray(prev)) return [updatedT];
           const exists = prev.find(p => p.id === updatedT.id);
           return exists ? prev.map(p => p.id === updatedT.id ? updatedT : p) : [...prev, updatedT];
         });
       };
 
       const handleDeleteTemplate = (id) => {
-        setTemplates(prev => prev.filter(p => p.id !== id));
+        setTemplates(prev => Array.isArray(prev) ? prev.filter(p => p.id !== id) : []);
       };
 
       const handleInsertTemplate = (draggedId, targetId, targetCategory) => {
         setTemplates(prev => {
+          if (!Array.isArray(prev)) return [];
           let newTemplates = [...prev];
           const draggedFile = newTemplates.find(t => t.id === draggedId);
           if (!draggedFile) return prev;
@@ -311,14 +340,17 @@
         });
       };
 
-      const rootFolders = categories.filter(c => c.parent === null);
+      const rootFolders = (Array.isArray(categories) ? categories : INITIAL_CATEGORIES).filter(c => c && c.parent === null);
 
       return (
         <div>
           <header className="app-header">
             <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h1 className="app-title">📨 テンプレ管理システム</h1>
-              <button className="btn btn-outline" onClick={() => setTheme(theme === 'matcha' ? 'kakishibu' : 'matcha')}>🎨 テーマ切替</button>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button className="btn btn-outline" onClick={() => setTheme(theme === 'matcha' ? 'kakishibu' : 'matcha')}>🎨 テーマ切替</button>
+                <button className="btn btn-danger-ghost" onClick={handleFactoryReset} style={{ fontSize: "12px", border: "1px solid var(--border)" }}>⚠️ リセット</button>
+              </div>
             </div>
           </header>
           <main style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 24px 100px" }}>
