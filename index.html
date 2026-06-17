@@ -9,374 +9,426 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+  <!-- Firebase CDN (compat版 = scriptタグで使えるバージョン) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
   <style>
     :root {
-      --bg-color: #EAE8E1;
-      --card-bg: #F8F7F4;
-      --text-main: #333333;
-      --text-muted: #666666;
-      --primary: #4D644A;
-      --primary-hover: #3A4C38;
-      --primary-light: #E9ECE8;
-      --border: #DCD8D0;
-      --border-strong: #BDB7AB;
-      --accent: #8F4B4B;
-      --accent-light: #F5EDED;
-      
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
-      --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
-      --radius-md: 8px;
-      --radius-lg: 12px;
+      --bg-color: #EAE8E1; --card-bg: #F8F7F4; --text-main: #333333; --text-muted: #666666;
+      --primary: #4D644A; --primary-hover: #3A4C38; --primary-light: #E9ECE8;
+      --border: #DCD8D0; --border-strong: #BDB7AB; --accent: #8F4B4B; --accent-light: #F5EDED;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05); --shadow-md: 0 4px 6px rgba(0,0,0,0.05);
+      --radius-md: 8px; --radius-lg: 12px;
     }
-
     [data-theme="kakishibu"] {
       --bg-color: #EBE1D5; --card-bg: #FFFDF9; --text-main: #4A3C31; --text-muted: #8A7B6E;
       --primary: #8D5A3A; --primary-hover: #6D442A; --primary-light: #F6EFEA;
       --border: #DBCFBE; --border-strong: #BAA993; --accent: #5C665C; --accent-light: #EBF0EB;
     }
-    
-    body { margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-main); font-family: sans-serif; transition: background-color 0.3s ease; }
-    .app-header { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 16px 28px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
-    .app-title { margin: 0; font-size: 22px; font-weight: 700; }
-    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: var(--radius-md); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-outline { background: var(--card-bg); border-color: var(--border-strong); color: var(--text-main); }
-    .btn-ghost { background: transparent; color: var(--text-muted); padding: 8px 14px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; }
-    .btn-danger-ghost { background: transparent; color: var(--accent); padding: 8px 14px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; }
-    .form-label { display: block; font-size: 13px; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
-    .form-control { width: 100%; padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); font-size: 16px; box-sizing: border-box; }
-    .card { background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 0px; overflow: hidden; }
-    .card-target { border: 2px solid var(--primary); box-shadow: 0 0 0 5px var(--primary-light); }
-    .card-header { padding: 16px 24px; display: flex; align-items: center; gap: 14px; cursor: pointer; user-select: none; }
-    .card-body { padding: 0 24px 24px; border-top: 1px solid var(--border); }
-    .drag-handle { color: var(--border-strong); cursor: grab; font-size: 18px; padding: 4px; user-select: none; }
-    .badge { padding: 6px 16px; border-radius: 24px; font-size: 13px; font-weight: 700; white-space: nowrap; user-select: none; border: 1px solid; }
-    .badge-template { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
-    .badge-flow { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
-    .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--border-strong); padding-bottom: 16px; margin-bottom: 16px; cursor: grab; }
-    .section-title { font-size: 26px; font-weight: 800; color: var(--text-main); }
-    .link-btn { background: var(--card-bg); color: var(--primary); border: 1px solid var(--primary); border-radius: 6px; padding: 4px 10px; margin: 0 4px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
-    .pre-area { background: var(--bg-color); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 24px; font-size: 16px; line-height: 1.9; white-space: pre-wrap; word-break: break-word; color: var(--text-main); margin: 0; font-family: inherit; }
-    .drop-zone { height: 16px; background: transparent; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; margin: -6px 0; position: relative; z-index: 10; }
-    .drop-zone.active { height: 44px; background: var(--primary-light); border: 2px dashed var(--primary); margin: 4px 0; }
-    .drop-zone-text { font-size: 13px; color: var(--primary); font-weight: bold; }
+    body { margin:0; padding:0; background:var(--bg-color); color:var(--text-main); font-family:sans-serif; }
+    .app-header { background:var(--card-bg); border-bottom:1px solid var(--border); padding:16px 28px; position:sticky; top:0; z-index:100; box-shadow:var(--shadow-sm); }
+    .app-title { margin:0; font-size:22px; font-weight:700; }
+    .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:var(--radius-md); font-size:15px; font-weight:600; cursor:pointer; transition:all 0.2s; border:1px solid transparent; }
+    .btn-primary { background:var(--primary); color:#fff; }
+    .btn-outline { background:var(--card-bg); border-color:var(--border-strong); color:var(--text-main); }
+    .btn-ghost { background:transparent; color:var(--text-muted); padding:8px 14px; border:none; font-size:14px; font-weight:600; cursor:pointer; }
+    .btn-danger-ghost { background:transparent; color:var(--accent); padding:8px 14px; border:none; font-size:14px; font-weight:600; cursor:pointer; }
+    .form-label { display:block; font-size:13px; color:var(--text-muted); font-weight:700; margin-bottom:8px; }
+    .form-control { width:100%; padding:12px 16px; border-radius:var(--radius-md); border:1px solid var(--border); background:var(--card-bg); color:var(--text-main); font-size:16px; box-sizing:border-box; }
+    .card { background:var(--card-bg); border-radius:var(--radius-lg); border:1px solid var(--border); box-shadow:var(--shadow-sm); overflow:hidden; }
+    .card-target { border:2px solid var(--primary); box-shadow:0 0 0 5px var(--primary-light); }
+    .card-header { padding:16px 24px; display:flex; align-items:center; gap:14px; cursor:pointer; user-select:none; }
+    .card-body { padding:0 24px 24px; border-top:1px solid var(--border); }
+    .drag-handle { color:var(--border-strong); cursor:grab; font-size:18px; padding:4px; user-select:none; }
+    .badge { padding:6px 16px; border-radius:24px; font-size:13px; font-weight:700; white-space:nowrap; user-select:none; border:1px solid; }
+    .badge-template { background:var(--primary-light); color:var(--primary); border-color:var(--primary); }
+    .badge-flow { background:var(--accent-light); color:var(--accent); border-color:var(--accent); }
+    .section-header { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid var(--border-strong); padding-bottom:16px; margin-bottom:16px; }
+    .section-title { font-size:26px; font-weight:800; }
+    .link-btn { background:var(--card-bg); color:var(--primary); border:1px solid var(--primary); border-radius:6px; padding:4px 10px; margin:0 4px; font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+    .pre-area { background:var(--bg-color); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px 24px; font-size:16px; line-height:1.9; white-space:pre-wrap; word-break:break-word; color:var(--text-main); margin:0; font-family:inherit; }
+    .drop-zone { height:16px; background:transparent; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; transition:all 0.2s; margin:-6px 0; position:relative; z-index:10; }
+    .drop-zone.active { height:44px; background:var(--primary-light); border:2px dashed var(--primary); margin:4px 0; }
+    .drop-zone-text { font-size:13px; color:var(--primary); font-weight:bold; }
+    .loading-overlay { position:fixed; inset:0; background:var(--bg-color); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; z-index:9999; }
+    .spinner { width:40px; height:40px; border:4px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .sync-indicator { font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+    .sync-dot { width:8px; height:8px; border-radius:50%; background:var(--primary); animation:pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+<div id="root"></div>
 
-  <script type="text/babel">
-    const { useState, useMemo, useEffect } = React;
+<script>
+  // Firebase初期化（compat版）
+  const firebaseConfig = {
+    apiKey: "AIzaSyBZ7v3kRjAsOGwYdUX_w0FKoGPLUhbR1VQ",
+    authDomain: "mail-template-68598.firebaseapp.com",
+    projectId: "mail-template-68598",
+    storageBucket: "mail-template-68598.firebasestorage.app",
+    messagingSenderId: "475374524236",
+    appId: "1:475374524236:web:b39a70aebc72bb4172e1e9"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
 
-    const INITIAL_CATEGORIES = [
-      { name: "📝 予約〜チェックイン前", parent: null, type: "section" },
-      { name: "予約前", parent: "📝 予約〜チェックイン前", type: "folder" },
-      { name: "マニュアル未読", parent: "📝 予約〜チェックイン前", type: "folder" },
-      { name: "URLが見れない", parent: "📝 予約〜チェックイン前", type: "folder" }
-    ];
+<script type="text/babel">
+  const { useState, useMemo, useEffect, useCallback, useRef } = React;
 
-    function CopyBtn({ text }) {
-      const [copied, setCopied] = useState(false);
-      const copy = () => { navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); }); };
-      if (!text) return <button className="btn btn-outline" style={{opacity: 0.5}} disabled>空です</button>;
-      return <button onClick={copy} className={`btn ${copied ? 'btn-primary' : 'btn-outline'}`}>{copied ? "✓ コピーしました" : "📋 コピー"}</button>;
-    }
+  const INITIAL_CATEGORIES = [
+    { name: "📝 予約〜チェックイン前", parent: null, type: "section" },
+    { name: "予約前", parent: "📝 予約〜チェックイン前", type: "folder" },
+    { name: "マニュアル未読", parent: "📝 予約〜チェックイン前", type: "folder" },
+    { name: "URLが見れない", parent: "📝 予約〜チェックイン前", type: "folder" }
+  ];
 
-    function DropZone({ onDrop, label }) {
-      const [isOver, setIsOver] = useState(false);
+  // Firestore操作ユーティリティ
+  const FS_COLL = "mailApp";
+  const CAT_DOC = "categories";
+  const TPL_DOC = "mailTemplates";
+
+  async function saveCategoriesToFS(categories) {
+    await db.collection(FS_COLL).doc(CAT_DOC).set({ data: categories });
+  }
+
+  async function saveTemplatesToFS(templates) {
+    await db.collection(FS_COLL).doc(TPL_DOC).set({ data: templates });
+  }
+
+  function CopyBtn({ text }) {
+    const [copied, setCopied] = useState(false);
+    const copy = () => { navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); }); };
+    if (!text) return <button className="btn btn-outline" style={{opacity:0.5}} disabled>空です</button>;
+    return <button onClick={copy} className={`btn ${copied ? 'btn-primary' : 'btn-outline'}`}>{copied ? "✓ コピーしました" : "📋 コピー"}</button>;
+  }
+
+  function DropZone({ onDrop, label }) {
+    const [isOver, setIsOver] = useState(false);
+    return (
+      <div className={`drop-zone ${isOver ? 'active' : ''}`}
+        onDragOver={e => { e.preventDefault(); e.stopPropagation(); setIsOver(true); }}
+        onDragLeave={e => { e.stopPropagation(); setIsOver(false); }}
+        onDrop={e => { e.preventDefault(); e.stopPropagation(); setIsOver(false); try { const d = JSON.parse(e.dataTransfer.getData("text/plain")); onDrop(d); } catch(err){} }}>
+        {isOver && <span className="drop-zone-text">{label || "ここに挿入"}</span>}
+      </div>
+    );
+  }
+
+  function LinkableText({ text, allTemplates, onLinkClick }) {
+    if (!text || typeof text !== 'string') return null;
+    const hasLinks = /\[リンク:(\d+)\]/.test(text);
+    if (!hasLinks) return <React.Fragment>{text}</React.Fragment>;
+    const parts = text.split(/\[リンク:(\d+)\]/g);
+    return (
+      <React.Fragment>
+        {parts.map((part, i) => {
+          if (i % 2 === 1) {
+            const tid = Number(part);
+            const tpl = (allTemplates || []).find(t => t.id === tid);
+            return <button key={i} className="link-btn" onClick={() => onLinkClick(tid)}>🔗 {tpl ? tpl.title : `不明ID:${tid}`}</button>;
+          }
+          return <span key={i}>{part}</span>;
+        })}
+      </React.Fragment>
+    );
+  }
+
+  function TemplateCard({ t, categories, allTemplates, onUpdate, onDelete, onLinkClick, forceOpenId }) {
+    const [open, setOpen] = useState(false);
+    const [lang, setLang] = useState("ja");
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData, setEditData] = useState({ ...t });
+    const [saving, setSaving] = useState(false);
+
+    const viewMode = t.itemType === "流れ" ? "flow" : "text";
+    useEffect(() => { if (forceOpenId === t.id) setOpen(true); }, [forceOpenId, t.id]);
+    useEffect(() => { if (viewMode === "flow") setLang("flow"); else if (lang === "flow") setLang("ja"); }, [viewMode]);
+
+    const currentText = lang === "ja" ? t.ja : lang === "en" ? t.en : t.flow;
+
+    const handleSave = async () => {
+      setSaving(true);
+      await onUpdate(editData);
+      setSaving(false);
+      setIsEditing(false);
+    };
+
+    const handleDragStart = (e) => {
+      if (isEditing) { e.preventDefault(); return; }
+      e.dataTransfer.setData("text/plain", JSON.stringify({ type: "template", id: t.id, currentCategory: t.category }));
+      e.stopPropagation();
+      e.currentTarget.style.opacity = "0.4";
+    };
+
+    if (isEditing) {
       return (
-        <div className={`drop-zone ${isOver ? 'active' : ''}`} onDragOver={e => { e.preventDefault(); e.stopPropagation(); setIsOver(true); }} onDragLeave={e => { e.stopPropagation(); setIsOver(false); }} onDrop={e => { e.preventDefault(); e.stopPropagation(); setIsOver(false); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); onDrop(data); } catch(err){} }}>
-          {isOver && <span className="drop-zone-text">{label || "ここに挿入"}</span>}
+        <div className="card card-target" style={{ padding:"24px" }}>
+          <div style={{ display:"flex", gap:16, marginBottom:20, flexWrap:"wrap" }}>
+            <div style={{ flex:2, minWidth:"200px" }}>
+              <label className="form-label">タイトル</label>
+              <input type="text" className="form-control" value={editData.title || ""} onChange={e => setEditData({...editData, title: e.target.value})} />
+            </div>
+            <div style={{ width:"140px" }}>
+              <label className="form-label">項目タイプ</label>
+              <select className="form-control" value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})}>
+                <option value="テンプレ">テンプレ</option>
+                <option value="流れ">流れ</option>
+              </select>
+            </div>
+          </div>
+          {(editData.itemType === "テンプレ" || !editData.itemType) && (
+            <React.Fragment>
+              <div style={{ marginBottom:20 }}><label className="form-label">🇯🇵 日本語</label><textarea className="form-control" value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ height:"180px" }} /></div>
+              <div style={{ marginBottom:24 }}><label className="form-label">🇬🇧 English</label><textarea className="form-control" value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ height:"140px" }} /></div>
+            </React.Fragment>
+          )}
+          {editData.itemType === "流れ" && (
+            <div style={{ marginBottom:28, background:"var(--accent-light)", padding:"20px", borderRadius:"12px" }}>
+              <label className="form-label" style={{ color:"var(--accent)" }}>📋 対応の流れ・社内マニュアル</label>
+              <textarea className="form-control" value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} style={{ height:"200px" }} />
+            </div>
+          )}
+          <div style={{ display:"flex", justifyContent:"flex-end", gap:14 }}>
+            <button className="btn btn-outline" onClick={() => setIsEditing(false)}>キャンセル</button>
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? "保存中..." : "保存する"}</button>
+          </div>
         </div>
       );
     }
 
-    function LinkableText({ text, allTemplates, onLinkClick }) {
-      if (!text || typeof text !== 'string') return null;
-      // ★修正①: test()とsplit()で同じregexインスタンスを使うとlastIndexがズレるため分離
-      const hasLinks = /\[リンク:(\d+)\]/.test(text);
-      if (!hasLinks) return <React.Fragment>{text}</React.Fragment>;
-      const parts = text.split(/\[リンク:(\d+)\]/g);
+    return (
+      <div id={`file-card-${t.id}`} className={`card ${forceOpenId === t.id ? 'card-target' : ''}`} draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"}>
+        <div className="card-header" onClick={() => setOpen(!open)}>
+          <span className="drag-handle">☰</span>
+          <span className={`badge ${t.itemType === '流れ' ? 'badge-flow' : 'badge-template'}`}>{t.itemType || "テンプレ"}</span>
+          <span style={{ fontWeight:600, fontSize:"17px", flex:1 }}>{t.title || "無題"}</span>
+          <div style={{ display:"flex", gap:8 }} onClick={e => e.stopPropagation()}>
+            <button className="btn btn-ghost" onClick={() => { setEditData({...t}); setIsEditing(true); setOpen(true); }}>✏️ 編集</button>
+            <button className="btn btn-danger-ghost" onClick={() => { if(confirm("削除しますか？")) onDelete(t.id); }}>🗑️ 削除</button>
+          </div>
+        </div>
+        {open && (
+          <div className="card-body">
+            {viewMode === "flow" ? (
+              <div style={{ paddingTop:"18px" }}>
+                <pre className="pre-area"><LinkableText text={t.flow || ""} allTemplates={allTemplates} onLinkClick={onLinkClick} /></pre>
+              </div>
+            ) : (
+              <div style={{ paddingTop:"18px" }}>
+                <div style={{ display:"flex", gap:10, marginBottom:18 }}>
+                  <button onClick={() => setLang("ja")} className={`btn ${lang==="ja" ? "btn-primary" : "btn-outline"}`}>🇯🇵 日本語</button>
+                  <button onClick={() => setLang("en")} className={`btn ${lang==="en" ? "btn-primary" : "btn-outline"}`}>🇬🇧 English</button>
+                  <div style={{ marginLeft:"auto" }}><CopyBtn text={currentText || ""} /></div>
+                </div>
+                <pre className="pre-area"><LinkableText text={currentText || ""} allTemplates={allTemplates} onLinkClick={onLinkClick} /></pre>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function FolderSection({ catObj, categories, templates, allTemplates, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, onInsertTemplate, level=0 }) {
+    const catName = catObj.name;
+    const [isOpen, setIsOpen] = useState(true);
+    const safeCategories = Array.isArray(categories) ? categories : [];
+    const safeTemplates = Array.isArray(templates) ? templates : [];
+    const childFolders = safeCategories.filter(c => c && c.parent === catName);
+    const childTemplates = useMemo(() => safeTemplates.filter(t => t && t.category === catName).sort((a,b) => (a.order||0)-(b.order||0)), [safeTemplates, catName]);
+
+    const handleSectionDrop = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      try { const d = JSON.parse(e.dataTransfer.getData("text/plain")); if (d.type==="template") { onInsertTemplate(d.id, null, catName); setIsOpen(true); } } catch(err){}
+    };
+
+    const commonProps = { categories:safeCategories, templates:safeTemplates, allTemplates, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, onInsertTemplate };
+
+    if (catObj.type === "section") {
       return (
-        <React.Fragment>
-          {parts.map((part, index) => {
-            if (index % 2 === 1) {
-              const targetId = Number(part);
-              const targetTemplate = (allTemplates || []).find(t => t.id === targetId);
-              const title = targetTemplate ? targetTemplate.title : `不明ID:${targetId}`;
-              return <button key={index} className="link-btn" onClick={() => onLinkClick(targetId)}>🔗 {title}</button>;
-            }
-            return <span key={index}>{part}</span>;
-          })}
-        </React.Fragment>
+        <div style={{ marginTop:60, marginBottom:36 }}>
+          <div className="section-header" onDragOver={e => e.preventDefault()} onDrop={handleSectionDrop}>
+            <span className="section-title">{catName}</span>
+          </div>
+          <div style={{ paddingLeft:"12px" }}>
+            {childFolders.map(c => <FolderSection key={c.name} catObj={c} {...commonProps} level={level+1} />)}
+            {childTemplates.map(t => (
+              <React.Fragment key={t.id}>
+                <DropZone onDrop={d => { if(d.type==='template') onInsertTemplate(d.id, t.id, catName); }} label="ここに挿入" />
+                <TemplateCard t={t} categories={safeCategories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />
+              </React.Fragment>
+            ))}
+            <DropZone onDrop={d => { if(d.type==='template') onInsertTemplate(d.id, null, catName); }} label={`${catName} の一番下に追加`} />
+          </div>
+        </div>
       );
     }
 
-    function TemplateCard({ t, categories, allTemplates, onUpdate, onDelete, onLinkClick, forceOpenId }) {
-      const [open, setOpen] = useState(false);
-      const [lang, setLang] = useState("ja"); 
-      const [isEditing, setIsEditing] = useState(false);
-      const [editData, setEditData] = useState({ ...t });
-
-      const viewMode = t.itemType === "流れ" ? "flow" : "text";
-
-      useEffect(() => { if (forceOpenId === t.id) { setOpen(true); } }, [forceOpenId, t.id]);
-      useEffect(() => { if (viewMode === "flow") { setLang("flow"); } else if (lang === "flow") { setLang("ja"); } }, [viewMode]);
-
-      const currentText = lang === "ja" ? t.ja : lang === "en" ? t.en : t.flow;
-
-      const handleSave = () => { onUpdate(editData); setIsEditing(false); };
-      const handleDragStart = (e) => { if (isEditing) { e.preventDefault(); return; } e.dataTransfer.setData("text/plain", JSON.stringify({ type: "template", id: t.id, currentCategory: t.category })); e.stopPropagation(); e.currentTarget.style.opacity = "0.4"; };
-
-      if (isEditing) {
-        return (
-          <div className="card card-target" style={{ padding: "24px" }}>
-            <div style={{ display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
-              <div style={{ flex: 2, minWidth: "200px" }}>
-                <label className="form-label">タイトル</label>
-                <input type="text" className="form-control" value={editData.title || ""} onChange={e => setEditData({...editData, title: e.target.value})} />
-              </div>
-              <div style={{ width: "140px" }}>
-                <label className="form-label">項目タイプ</label>
-                <select className="form-control" value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})}>
-                  <option value="テンプレ">テンプレ</option><option value="流れ">流れ</option>
-                </select>
-              </div>
-            </div>
-            
-            {(editData.itemType === "テンプレ" || !editData.itemType) && (
-              <React.Fragment>
-                <div style={{ marginBottom: 20 }}><label className="form-label">🇯🇵 日本語</label><textarea className="form-control" value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ height: "180px" }} /></div>
-                <div style={{ marginBottom: 24 }}><label className="form-label">🇬🇧 English</label><textarea className="form-control" value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ height: "140px" }} /></div>
-              </React.Fragment>
-            )}
-
-            {editData.itemType === "流れ" && (
-              <div style={{ marginBottom: 28, background: "var(--accent-light)", padding: "20px", borderRadius: "12px" }}>
-                <label className="form-label" style={{ color: "var(--accent)" }}>📋 対応の流れ・社内マニュアル</label>
-                <textarea className="form-control" value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} style={{ height: "200px" }} />
-              </div>
-            )}
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 14 }}>
-              <button className="btn btn-outline" onClick={() => setIsEditing(false)}>キャンセル</button>
-              <button className="btn btn-primary" onClick={handleSave}>保存する</button>
+    return (
+      <div style={{ marginBottom:18, marginLeft: level>0 ? "36px" : "0" }}>
+        <div className="card" style={{ borderLeft: level>0 ? "5px solid var(--primary)" : "1px solid var(--border)" }}>
+          <div className="card-header" onDragOver={e => e.preventDefault()} onDrop={handleSectionDrop} onClick={() => setIsOpen(!isOpen)}>
+            <span style={{ fontSize:16, color:"var(--text-muted)", marginRight:10 }}>{isOpen ? "▼" : "▶"}</span>
+            <span style={{ fontSize:22, marginRight:8 }}>📂</span>
+            <span style={{ fontSize:17, fontWeight:700, flex:1 }}>{catName}</span>
+            <div style={{ display:"flex", gap:10 }} onClick={e => e.stopPropagation()}>
+              <button className="btn btn-primary" onClick={() => { onAddTemplate(catName); setIsOpen(true); }}>➕ 追加</button>
             </div>
           </div>
-        );
-      }
-
-      return (
-        <div id={`file-card-${t.id}`} className={`card ${forceOpenId === t.id ? 'card-target' : ''}`} draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"}>
-          <div className="card-header" onClick={() => setOpen(!open)}>
-            <span className="drag-handle">☰</span>
-            <span className={`badge ${t.itemType === '流れ' ? 'badge-flow' : 'badge-template'}`}>{t.itemType || "テンプレ"}</span>
-            <span style={{ fontWeight: 600, fontSize: "17px", flex: 1 }}>{t.title || "無題"}</span>
-            <div style={{ display: "flex", gap: 8 }} onClick={e => e.stopPropagation()}>
-              <button className="btn btn-ghost" onClick={() => { setEditData({...t}); setIsEditing(true); setOpen(true); }}>✏️ 編集</button>
-              <button className="btn btn-danger-ghost" onClick={() => { if(confirm("削除しますか？")) onDelete(t.id); }}>🗑️ 削除</button>
-            </div>
-          </div>
-
-          {open && (
-            <div className="card-body">
-              {viewMode === "flow" ? (
-                <div style={{ paddingTop: "18px" }}>
-                  <pre className="pre-area flow-area"><LinkableText text={t.flow || ""} allTemplates={allTemplates} onLinkClick={onLinkClick} /></pre>
-                </div>
-              ) : (
-                <div style={{ paddingTop: "18px" }}>
-                  <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
-                    <button onClick={() => setLang("ja")} className={`btn ${lang === "ja" ? "btn-primary" : "btn-outline"}`}>🇯🇵 日本語</button>
-                    <button onClick={() => setLang("en")} className={`btn ${lang === "en" ? "btn-primary" : "btn-outline"}`}>🇬🇧 English</button>
-                    <div style={{ marginLeft: "auto" }}><CopyBtn text={currentText || ""} /></div>
-                  </div>
-                  <pre className="pre-area"><LinkableText text={currentText || ""} allTemplates={allTemplates} onLinkClick={onLinkClick} /></pre>
-                </div>
+          {isOpen && (
+            <div className="card-body" style={{ background:"var(--bg-color)", paddingTop:"24px" }}>
+              {childFolders.map(c => <FolderSection key={c.name} catObj={c} {...commonProps} level={level+1} />)}
+              {childTemplates.map(t => (
+                <React.Fragment key={t.id}>
+                  <DropZone onDrop={d => { if(d.type==='template') onInsertTemplate(d.id, t.id, catName); }} label="ここに挿入" />
+                  <TemplateCard t={t} categories={safeCategories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />
+                </React.Fragment>
+              ))}
+              {(childFolders.length > 0 || childTemplates.length > 0) && (
+                <DropZone onDrop={d => { if(d.type==='template') onInsertTemplate(d.id, null, catName); }} label={`${catName} の一番下に追加`} />
               )}
             </div>
           )}
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
-    function FolderSection({ catObj, categories, templates, allTemplates, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, onInsertTemplate, level = 0 }) {
-      const catName = catObj.name;
-      const [isOpen, setIsOpen] = useState(true);
-      
-      const safeCategories = Array.isArray(categories) ? categories : [];
-      const safeTemplates = Array.isArray(templates) ? templates : [];
+  function App() {
+    const [categories, setCategories] = useState([]);
+    const [templates, setTemplates] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [syncing, setSyncing] = useState(false);
+    const [theme, setTheme] = useState(localStorage.getItem('app_theme') || 'matcha');
+    const isFirstLoad = useRef(true);
 
-      const childFolders = safeCategories.filter(c => c && c.parent === catName);
-      const childTemplates = useMemo(() => safeTemplates.filter(t => t && t.category === catName).sort((a, b) => (a.order || 0) - (b.order || 0)), [safeTemplates, catName]);
+    useEffect(() => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('app_theme', theme); }, [theme]);
 
-      const handleSectionDrop = (e) => { e.preventDefault(); e.stopPropagation(); try { const data = JSON.parse(e.dataTransfer.getData("text/plain")); if (data.type === "template") { onInsertTemplate(data.id, null, catName); setIsOpen(true); } } catch(err){} };
-
-      if (catObj.type === "section") {
-        return (
-          <div style={{ marginTop: 60, marginBottom: 36 }}>
-            <div className="section-header" onDragOver={e => e.preventDefault()} onDrop={handleSectionDrop}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}><span className="section-title">{catName}</span></div>
-            </div>
-            <div style={{ paddingLeft: "12px" }}>
-              {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={safeCategories} templates={safeTemplates} allTemplates={allTemplates} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} onInsertTemplate={onInsertTemplate} level={level + 1} />)}
-              {childTemplates.map(t => ( <React.Fragment key={t.id}><DropZone onDrop={(data) => { if (data.type === 'template') onInsertTemplate(data.id, t.id, catName); }} label="ここに挿入" /><TemplateCard t={t} categories={safeCategories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} /></React.Fragment> ))}
-              <DropZone onDrop={(data) => { if(data.type === 'template') onInsertTemplate(data.id, null, catName); }} label={`${catName} の一番下に追加`} />
-            </div>
-          </div>
-        );
-      }
-
-      return (
-        <div style={{ marginBottom: 18, marginLeft: level > 0 ? "36px" : "0" }}>
-          <div className="card" style={{ borderLeft: level > 0 ? "5px solid var(--primary)" : "1px solid var(--border)", marginBottom: 0 }}>
-            <div className="card-header" onDragOver={e => e.preventDefault()} onDrop={handleSectionDrop} onClick={() => setIsOpen(!isOpen)}>
-              <span style={{ fontSize: 16, color: "var(--text-muted)", marginRight: 10 }}>{isOpen ? "▼" : "▶"}</span><span style={{ fontSize: 22, marginRight: 8 }}>📂</span><span style={{ fontSize: 17, fontWeight: 700, flex: 1 }}>{catName}</span>
-              <div style={{ display: "flex", gap: 10 }} onClick={e => e.stopPropagation()}>
-                <button className="btn btn-primary" onClick={() => { onAddTemplate(catName); setIsOpen(true); }}>➕ 追加</button>
-              </div>
-            </div>
-            {isOpen && (
-              <div className="card-body" style={{ background: "var(--bg-color)", paddingTop: "24px" }}>
-                {childFolders.map(childCat => <FolderSection key={childCat.name} catObj={childCat} categories={safeCategories} templates={safeTemplates} allTemplates={allTemplates} onAddTemplate={onAddTemplate} onUpdateTemplate={onUpdateTemplate} onDeleteTemplate={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} onInsertTemplate={onInsertTemplate} level={level + 1} />)}
-                {childTemplates.map(t => ( <React.Fragment key={t.id}><DropZone onDrop={(data) => { if (data.type === 'template') onInsertTemplate(data.id, t.id, catName); }} label="ここに挿入" /><TemplateCard t={t} categories={safeCategories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} /></React.Fragment> ))}
-                {(childFolders.length > 0 || childTemplates.length > 0) && <DropZone onDrop={(data) => { if(data.type === 'template') onInsertTemplate(data.id, null, catName); }} label={`${catName} の一番下に追加`} />}
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    function App() {
-      const [categories, setCategories] = useState(() => {
-        try {
-          const saved = localStorage.getItem('app_categories');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) return parsed;
-          }
-        } catch(e) { console.warn("カテゴリデータの読み込みエラー、初期化します"); }
-        return INITIAL_CATEGORIES;
-      });
-
-      const [templates, setTemplates] = useState(() => {
-        try {
-          const saved = localStorage.getItem('app_templates');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) return parsed;
-          }
-        } catch(e) { console.warn("テンプレートデータの読み込みエラー、初期化します"); }
-        return [];
-      });
-
-      useEffect(() => { localStorage.setItem('app_categories', JSON.stringify(categories)); }, [categories]);
-      useEffect(() => { localStorage.setItem('app_templates', JSON.stringify(templates)); }, [templates]);
-
-      const [theme, setTheme] = useState(localStorage.getItem('app_theme') || 'matcha');
-      useEffect(() => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('app_theme', theme); }, [theme]);
-
-      const handleFactoryReset = () => {
-        if(confirm("【警告】すべてのデータを初期化しますか？画面がおかしい場合のみ実行してください。")) {
-          localStorage.clear();
-          window.location.reload();
+    // Firestoreからリアルタイム購読
+    useEffect(() => {
+      const unsubCat = db.collection(FS_COLL).doc(CAT_DOC).onSnapshot(snap => {
+        if (snap.exists) {
+          const d = snap.data();
+          if (Array.isArray(d.data)) setCategories(d.data);
+        } else {
+          // ドキュメントがない場合は初期データを書き込む
+          saveCategoriesToFS(INITIAL_CATEGORIES);
+          setCategories(INITIAL_CATEGORIES);
         }
-      };
+      });
 
-      const handleAddTemplate = (categoryName) => {
-        const newTemp = { id: Date.now(), title: "新規アイテム", category: categoryName, itemType: "テンプレ", order: 999, ja: "", en: "", flow: "" };
-        setTemplates(prev => Array.isArray(prev) ? [...prev, newTemp] : [newTemp]);
-      };
+      const unsubTpl = db.collection(FS_COLL).doc(TPL_DOC).onSnapshot(snap => {
+        if (snap.exists) {
+          const d = snap.data();
+          if (Array.isArray(d.data)) setTemplates(d.data);
+        } else {
+          setTemplates([]);
+        }
+        setLoading(false);
+      });
 
-      const handleUpdateTemplate = (updatedT) => {
-        setTemplates(prev => {
-          if (!Array.isArray(prev)) return [updatedT];
-          const exists = prev.find(p => p.id === updatedT.id);
-          return exists ? prev.map(p => p.id === updatedT.id ? updatedT : p) : [...prev, updatedT];
-        });
-      };
+      return () => { unsubCat(); unsubTpl(); };
+    }, []);
 
-      const handleDeleteTemplate = (id) => {
-        setTemplates(prev => Array.isArray(prev) ? prev.filter(p => p.id !== id) : []);
-      };
+    const saveCategories = useCallback(async (newCats) => {
+      setCategories(newCats);
+      setSyncing(true);
+      await saveCategoriesToFS(newCats);
+      setSyncing(false);
+    }, []);
 
-      // ★修正②: 同カテゴリ内移動で要素が重複するバグを修正
-      const handleInsertTemplate = (draggedId, targetId, targetCategory) => {
-        setTemplates(prev => {
-          if (!Array.isArray(prev)) return [];
-          
-          const draggedFile = prev.find(t => t.id === draggedId);
-          if (!draggedFile) return prev;
-          
-          const oldCategory = draggedFile.category;
-          
-          // ドラッグ対象を除いたリスト
-          const withoutDragged = prev.filter(t => t.id !== draggedId);
-          
-          // 移動先カテゴリのファイル一覧（順序付き）
-          const targetCategoryFiles = withoutDragged
-            .filter(t => t.category === targetCategory)
-            .sort((a, b) => (a.order || 0) - (b.order || 0));
-          
-          // 挿入位置を決める
-          const updatedDragged = { ...draggedFile, category: targetCategory };
-          if (targetId) {
-            const targetIndex = targetCategoryFiles.findIndex(t => t.id === targetId);
-            if (targetIndex !== -1) {
-              targetCategoryFiles.splice(targetIndex, 0, updatedDragged);
-            } else {
-              targetCategoryFiles.push(updatedDragged);
-            }
-          } else {
-            targetCategoryFiles.push(updatedDragged);
-          }
-          
-          // order を振り直す
-          targetCategoryFiles.forEach((file, index) => { file.order = index + 1; });
-          
-          // 移動元カテゴリのファイル一覧（別カテゴリへ移動した場合のみ再計算）
-          let sourceCategoryFiles = [];
-          if (oldCategory !== targetCategory) {
-            sourceCategoryFiles = withoutDragged
-              .filter(t => t.category === oldCategory)
-              .sort((a, b) => (a.order || 0) - (b.order || 0));
-            sourceCategoryFiles.forEach((file, index) => { file.order = index + 1; });
-          }
-          
-          // それ以外のファイル（両カテゴリに含まれないもの）
-          const otherFiles = withoutDragged.filter(t => 
-            t.category !== targetCategory && t.category !== oldCategory
-          );
-          
-          return [...otherFiles, ...targetCategoryFiles, ...sourceCategoryFiles];
-        });
-      };
+    const saveTemplates = useCallback(async (newTpls) => {
+      setTemplates(newTpls);
+      setSyncing(true);
+      await saveTemplatesToFS(newTpls);
+      setSyncing(false);
+    }, []);
 
-      const rootFolders = (Array.isArray(categories) ? categories : INITIAL_CATEGORIES).filter(c => c && c.parent === null);
+    const handleAddTemplate = useCallback(async (categoryName) => {
+      const newTemp = { id: Date.now(), title:"新規アイテム", category:categoryName, itemType:"テンプレ", order:999, ja:"", en:"", flow:"" };
+      const next = [...templates, newTemp];
+      await saveTemplates(next);
+    }, [templates, saveTemplates]);
 
+    const handleUpdateTemplate = useCallback(async (updatedT) => {
+      const exists = templates.find(p => p.id === updatedT.id);
+      const next = exists ? templates.map(p => p.id === updatedT.id ? updatedT : p) : [...templates, updatedT];
+      await saveTemplates(next);
+    }, [templates, saveTemplates]);
+
+    const handleDeleteTemplate = useCallback(async (id) => {
+      await saveTemplates(templates.filter(p => p.id !== id));
+    }, [templates, saveTemplates]);
+
+    const handleInsertTemplate = useCallback(async (draggedId, targetId, targetCategory) => {
+      const draggedFile = templates.find(t => t.id === draggedId);
+      if (!draggedFile) return;
+      const oldCategory = draggedFile.category;
+      const withoutDragged = templates.filter(t => t.id !== draggedId);
+      const targetCategoryFiles = withoutDragged.filter(t => t.category === targetCategory).sort((a,b) => (a.order||0)-(b.order||0));
+      const updatedDragged = { ...draggedFile, category: targetCategory };
+      if (targetId) {
+        const idx = targetCategoryFiles.findIndex(t => t.id === targetId);
+        if (idx !== -1) targetCategoryFiles.splice(idx, 0, updatedDragged);
+        else targetCategoryFiles.push(updatedDragged);
+      } else {
+        targetCategoryFiles.push(updatedDragged);
+      }
+      targetCategoryFiles.forEach((f, i) => f.order = i + 1);
+      let sourceCategoryFiles = [];
+      if (oldCategory !== targetCategory) {
+        sourceCategoryFiles = withoutDragged.filter(t => t.category === oldCategory).sort((a,b) => (a.order||0)-(b.order||0));
+        sourceCategoryFiles.forEach((f, i) => f.order = i + 1);
+      }
+      const otherFiles = withoutDragged.filter(t => t.category !== targetCategory && t.category !== oldCategory);
+      await saveTemplates([...otherFiles, ...targetCategoryFiles, ...sourceCategoryFiles]);
+    }, [templates, saveTemplates]);
+
+    const rootFolders = (Array.isArray(categories) ? categories : INITIAL_CATEGORIES).filter(c => c && c.parent === null);
+
+    if (loading) {
       return (
-        <div>
-          <header className="app-header">
-            <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h1 className="app-title">📨 テンプレ管理システム</h1>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button className="btn btn-outline" onClick={() => setTheme(theme === 'matcha' ? 'kakishibu' : 'matcha')}>🎨 テーマ切替</button>
-                <button className="btn btn-danger-ghost" onClick={handleFactoryReset} style={{ fontSize: "12px", border: "1px solid var(--border)" }}>⚠️ リセット</button>
-              </div>
-            </div>
-          </header>
-          <main style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 24px 100px" }}>
-            {rootFolders.map(cat => (
-              <FolderSection key={cat.name} catObj={cat} categories={categories} templates={templates} allTemplates={templates} onAddTemplate={handleAddTemplate} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} onLinkClick={()=>{}} forceOpenId={null} onInsertTemplate={handleInsertTemplate} level={0} />
-            ))}
-          </main>
+        <div className="loading-overlay">
+          <div className="spinner"></div>
+          <div style={{ color:"var(--text-muted)", fontWeight:600 }}>Firestoreからデータを読み込み中...</div>
         </div>
       );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('root')); root.render(<App />);
-  </script>
+    return (
+      <div>
+        <header className="app-header">
+          <div style={{ maxWidth:1000, margin:"0 auto", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <h1 className="app-title">📨 テンプレ管理システム</h1>
+            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+              {syncing && (
+                <div className="sync-indicator">
+                  <div className="sync-dot"></div>
+                  <span>同期中</span>
+                </div>
+              )}
+              <button className="btn btn-outline" onClick={() => setTheme(theme === 'matcha' ? 'kakishibu' : 'matcha')}>🎨 テーマ切替</button>
+            </div>
+          </div>
+        </header>
+        <main style={{ maxWidth:1000, margin:"0 auto", padding:"40px 24px 100px" }}>
+          {rootFolders.map(cat => (
+            <FolderSection key={cat.name} catObj={cat} categories={categories} templates={templates} allTemplates={templates}
+              onAddTemplate={handleAddTemplate} onUpdateTemplate={handleUpdateTemplate}
+              onDeleteTemplate={handleDeleteTemplate} onLinkClick={() => {}}
+              forceOpenId={null} onInsertTemplate={handleInsertTemplate} level={0} />
+          ))}
+        </main>
+      </div>
+    );
+  }
+
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(<App />);
+</script>
 </body>
 </html>
