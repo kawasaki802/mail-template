@@ -9,16 +9,16 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Firebase CDN (compat版 = scriptタグで使えるバージョン) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase compat版 v9 (importなしで使えるバージョン) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
     :root {
       --bg-color: #EAE8E1; --card-bg: #F8F7F4; --text-main: #333333; --text-muted: #666666;
       --primary: #4D644A; --primary-hover: #3A4C38; --primary-light: #E9ECE8;
       --border: #DCD8D0; --border-strong: #BDB7AB; --accent: #8F4B4B; --accent-light: #F5EDED;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05); --shadow-md: 0 4px 6px rgba(0,0,0,0.05);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
       --radius-md: 8px; --radius-lg: 12px;
     }
     [data-theme="kakishibu"] {
@@ -55,29 +55,44 @@
     .spinner { width:40px; height:40px; border:4px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
     .sync-indicator { font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
-    .sync-dot { width:8px; height:8px; border-radius:50%; background:var(--primary); animation:pulse 1.5s ease-in-out infinite; }
+    .sync-dot { width:8px; height:8px; border-radius:50%; background:#4CAF50; animation:pulse 1.5s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .error-box { background:#fff0f0; border:1px solid #ffcccc; border-radius:8px; padding:16px; margin:20px; color:#c00; font-size:14px; }
   </style>
 </head>
 <body>
 <div id="root"></div>
 
+<!-- Firebase初期化: 通常のscriptタグで行う（Babelの外） -->
 <script>
-  // Firebase初期化（compat版）
-  const firebaseConfig = {
-    apiKey: "AIzaSyBZ7v3kRjAsOGwYdUX_w0FKoGPLUhbR1VQ",
-    authDomain: "mail-template-68598.firebaseapp.com",
-    projectId: "mail-template-68598",
-    storageBucket: "mail-template-68598.firebasestorage.app",
-    messagingSenderId: "475374524236",
-    appId: "1:475374524236:web:b39a70aebc72bb4172e1e9"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+(function() {
+  try {
+    var firebaseConfig = {
+      apiKey: "AIzaSyBZ7v3kRjAsOGwYdUX_w0FKoGPLUhbR1VQ",
+      authDomain: "mail-template-68598.firebaseapp.com",
+      projectId: "mail-template-68598",
+      storageBucket: "mail-template-68598.firebasestorage.app",
+      messagingSenderId: "475374524236",
+      appId: "1:475374524236:web:b39a70aebc72bb4172e1e9"
+    };
+    firebase.initializeApp(firebaseConfig);
+    window.__db = firebase.firestore();
+    console.log("✅ Firebase初期化成功");
+  } catch(e) {
+    console.error("❌ Firebase初期化エラー:", e);
+    window.__firebaseError = e.message;
+  }
+})();
 </script>
 
 <script type="text/babel">
   const { useState, useMemo, useEffect, useCallback, useRef } = React;
+
+  // window.__db 経由でFirestoreを使う（importなし）
+  const db = window.__db;
+  const FS_COLL = "mailApp";
+  const CAT_DOC = "categories";
+  const TPL_DOC = "mailTemplates";
 
   const INITIAL_CATEGORIES = [
     { name: "📝 予約〜チェックイン前", parent: null, type: "section" },
@@ -86,17 +101,11 @@
     { name: "URLが見れない", parent: "📝 予約〜チェックイン前", type: "folder" }
   ];
 
-  // Firestore操作ユーティリティ
-  const FS_COLL = "mailApp";
-  const CAT_DOC = "categories";
-  const TPL_DOC = "mailTemplates";
-
-  async function saveCategoriesToFS(categories) {
-    await db.collection(FS_COLL).doc(CAT_DOC).set({ data: categories });
+  async function fsSaveCategories(cats) {
+    await db.collection(FS_COLL).doc(CAT_DOC).set({ data: cats });
   }
-
-  async function saveTemplatesToFS(templates) {
-    await db.collection(FS_COLL).doc(TPL_DOC).set({ data: templates });
+  async function fsSaveTemplates(tpls) {
+    await db.collection(FS_COLL).doc(TPL_DOC).set({ data: tpls });
   }
 
   function CopyBtn({ text }) {
@@ -109,10 +118,14 @@
   function DropZone({ onDrop, label }) {
     const [isOver, setIsOver] = useState(false);
     return (
-      <div className={`drop-zone ${isOver ? 'active' : ''}`}
+      <div
+        className={`drop-zone ${isOver ? 'active' : ''}`}
         onDragOver={e => { e.preventDefault(); e.stopPropagation(); setIsOver(true); }}
         onDragLeave={e => { e.stopPropagation(); setIsOver(false); }}
-        onDrop={e => { e.preventDefault(); e.stopPropagation(); setIsOver(false); try { const d = JSON.parse(e.dataTransfer.getData("text/plain")); onDrop(d); } catch(err){} }}>
+        onDrop={e => {
+          e.preventDefault(); e.stopPropagation(); setIsOver(false);
+          try { const d = JSON.parse(e.dataTransfer.getData("text/plain")); onDrop(d); } catch(err){}
+        }}>
         {isOver && <span className="drop-zone-text">{label || "ここに挿入"}</span>}
       </div>
     );
@@ -152,14 +165,14 @@
 
     const handleSave = async () => {
       setSaving(true);
-      await onUpdate(editData);
-      setSaving(false);
-      setIsEditing(false);
+      try { await onUpdate(editData); setIsEditing(false); }
+      catch(e) { alert("保存エラー: " + e.message); }
+      finally { setSaving(false); }
     };
 
     const handleDragStart = (e) => {
       if (isEditing) { e.preventDefault(); return; }
-      e.dataTransfer.setData("text/plain", JSON.stringify({ type: "template", id: t.id, currentCategory: t.category }));
+      e.dataTransfer.setData("text/plain", JSON.stringify({ type:"template", id:t.id, currentCategory:t.category }));
       e.stopPropagation();
       e.currentTarget.style.opacity = "0.4";
     };
@@ -170,11 +183,11 @@
           <div style={{ display:"flex", gap:16, marginBottom:20, flexWrap:"wrap" }}>
             <div style={{ flex:2, minWidth:"200px" }}>
               <label className="form-label">タイトル</label>
-              <input type="text" className="form-control" value={editData.title || ""} onChange={e => setEditData({...editData, title: e.target.value})} />
+              <input type="text" className="form-control" value={editData.title || ""} onChange={e => setEditData({...editData, title:e.target.value})} />
             </div>
             <div style={{ width:"140px" }}>
               <label className="form-label">項目タイプ</label>
-              <select className="form-control" value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType: e.target.value})}>
+              <select className="form-control" value={editData.itemType || "テンプレ"} onChange={e => setEditData({...editData, itemType:e.target.value})}>
                 <option value="テンプレ">テンプレ</option>
                 <option value="流れ">流れ</option>
               </select>
@@ -182,14 +195,20 @@
           </div>
           {(editData.itemType === "テンプレ" || !editData.itemType) && (
             <React.Fragment>
-              <div style={{ marginBottom:20 }}><label className="form-label">🇯🇵 日本語</label><textarea className="form-control" value={editData.ja || ""} onChange={e => setEditData({...editData, ja: e.target.value})} style={{ height:"180px" }} /></div>
-              <div style={{ marginBottom:24 }}><label className="form-label">🇬🇧 English</label><textarea className="form-control" value={editData.en || ""} onChange={e => setEditData({...editData, en: e.target.value})} style={{ height:"140px" }} /></div>
+              <div style={{ marginBottom:20 }}>
+                <label className="form-label">🇯🇵 日本語</label>
+                <textarea className="form-control" value={editData.ja || ""} onChange={e => setEditData({...editData, ja:e.target.value})} style={{ height:"180px" }} />
+              </div>
+              <div style={{ marginBottom:24 }}>
+                <label className="form-label">🇬🇧 English</label>
+                <textarea className="form-control" value={editData.en || ""} onChange={e => setEditData({...editData, en:e.target.value})} style={{ height:"140px" }} />
+              </div>
             </React.Fragment>
           )}
           {editData.itemType === "流れ" && (
             <div style={{ marginBottom:28, background:"var(--accent-light)", padding:"20px", borderRadius:"12px" }}>
               <label className="form-label" style={{ color:"var(--accent)" }}>📋 対応の流れ・社内マニュアル</label>
-              <textarea className="form-control" value={editData.flow || ""} onChange={e => setEditData({...editData, flow: e.target.value})} style={{ height:"200px" }} />
+              <textarea className="form-control" value={editData.flow || ""} onChange={e => setEditData({...editData, flow:e.target.value})} style={{ height:"200px" }} />
             </div>
           )}
           <div style={{ display:"flex", justifyContent:"flex-end", gap:14 }}>
@@ -201,7 +220,8 @@
     }
 
     return (
-      <div id={`file-card-${t.id}`} className={`card ${forceOpenId === t.id ? 'card-target' : ''}`} draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"}>
+      <div id={`file-card-${t.id}`} className={`card ${forceOpenId === t.id ? 'card-target' : ''}`}
+        draggable onDragStart={handleDragStart} onDragEnd={e => e.currentTarget.style.opacity = "1"}>
         <div className="card-header" onClick={() => setOpen(!open)}>
           <span className="drag-handle">☰</span>
           <span className={`badge ${t.itemType === '流れ' ? 'badge-flow' : 'badge-template'}`}>{t.itemType || "テンプレ"}</span>
@@ -239,14 +259,38 @@
     const safeCategories = Array.isArray(categories) ? categories : [];
     const safeTemplates = Array.isArray(templates) ? templates : [];
     const childFolders = safeCategories.filter(c => c && c.parent === catName);
-    const childTemplates = useMemo(() => safeTemplates.filter(t => t && t.category === catName).sort((a,b) => (a.order||0)-(b.order||0)), [safeTemplates, catName]);
+    const childTemplates = useMemo(
+      () => safeTemplates.filter(t => t && t.category === catName).sort((a,b) => (a.order||0)-(b.order||0)),
+      [safeTemplates, catName]
+    );
 
     const handleSectionDrop = (e) => {
       e.preventDefault(); e.stopPropagation();
-      try { const d = JSON.parse(e.dataTransfer.getData("text/plain")); if (d.type==="template") { onInsertTemplate(d.id, null, catName); setIsOpen(true); } } catch(err){}
+      try {
+        const d = JSON.parse(e.dataTransfer.getData("text/plain"));
+        if (d.type === "template") { onInsertTemplate(d.id, null, catName); setIsOpen(true); }
+      } catch(err){}
     };
 
     const commonProps = { categories:safeCategories, templates:safeTemplates, allTemplates, onAddTemplate, onUpdateTemplate, onDeleteTemplate, onLinkClick, forceOpenId, onInsertTemplate };
+
+    const renderChildren = (parentCatName) => (
+      <React.Fragment>
+        {childFolders.map(c => <FolderSection key={c.name} catObj={c} {...commonProps} level={level+1} />)}
+        {childTemplates.map(t => (
+          <React.Fragment key={t.id}>
+            <DropZone onDrop={d => { if(d.type==='template') onInsertTemplate(d.id, t.id, catName); }} label="ここに挿入" />
+            <TemplateCard t={t} categories={safeCategories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />
+          </React.Fragment>
+        ))}
+        {(childTemplates.length > 0 || childFolders.length > 0) && (
+          <DropZone onDrop={d => { if(d.type==='template') onInsertTemplate(d.id, null, catName); }} label={`${catName} の一番下に追加`} />
+        )}
+        {childTemplates.length === 0 && childFolders.length === 0 && (
+          <DropZone onDrop={d => { if(d.type==='template') onInsertTemplate(d.id, null, catName); }} label={`${catName} の一番下に追加`} />
+        )}
+      </React.Fragment>
+    );
 
     if (catObj.type === "section") {
       return (
@@ -269,8 +313,8 @@
     }
 
     return (
-      <div style={{ marginBottom:18, marginLeft: level>0 ? "36px" : "0" }}>
-        <div className="card" style={{ borderLeft: level>0 ? "5px solid var(--primary)" : "1px solid var(--border)" }}>
+      <div style={{ marginBottom:18, marginLeft:level > 0 ? "36px" : "0" }}>
+        <div className="card" style={{ borderLeft:level > 0 ? "5px solid var(--primary)" : "1px solid var(--border)" }}>
           <div className="card-header" onDragOver={e => e.preventDefault()} onDrop={handleSectionDrop} onClick={() => setIsOpen(!isOpen)}>
             <span style={{ fontSize:16, color:"var(--text-muted)", marginRight:10 }}>{isOpen ? "▼" : "▶"}</span>
             <span style={{ fontSize:22, marginRight:8 }}>📂</span>
@@ -288,9 +332,7 @@
                   <TemplateCard t={t} categories={safeCategories} allTemplates={allTemplates} onUpdate={onUpdateTemplate} onDelete={onDeleteTemplate} onLinkClick={onLinkClick} forceOpenId={forceOpenId} />
                 </React.Fragment>
               ))}
-              {(childFolders.length > 0 || childTemplates.length > 0) && (
-                <DropZone onDrop={d => { if(d.type==='template') onInsertTemplate(d.id, null, catName); }} label={`${catName} の一番下に追加`} />
-              )}
+              <DropZone onDrop={d => { if(d.type==='template') onInsertTemplate(d.id, null, catName); }} label={`${catName} の一番下に追加`} />
             </div>
           )}
         </div>
@@ -303,101 +345,113 @@
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
+    const [error, setError] = useState(window.__firebaseError || null);
     const [theme, setTheme] = useState(localStorage.getItem('app_theme') || 'matcha');
-    const isFirstLoad = useRef(true);
 
-    useEffect(() => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('app_theme', theme); }, [theme]);
-
-    // Firestoreからリアルタイム購読
     useEffect(() => {
-      const unsubCat = db.collection(FS_COLL).doc(CAT_DOC).onSnapshot(snap => {
-        if (snap.exists) {
-          const d = snap.data();
-          if (Array.isArray(d.data)) setCategories(d.data);
-        } else {
-          // ドキュメントがない場合は初期データを書き込む
-          saveCategoriesToFS(INITIAL_CATEGORIES);
-          setCategories(INITIAL_CATEGORIES);
-        }
-      });
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('app_theme', theme);
+    }, [theme]);
 
-      const unsubTpl = db.collection(FS_COLL).doc(TPL_DOC).onSnapshot(snap => {
-        if (snap.exists) {
-          const d = snap.data();
-          if (Array.isArray(d.data)) setTemplates(d.data);
-        } else {
-          setTemplates([]);
-        }
-        setLoading(false);
-      });
+    useEffect(() => {
+      if (!db) { setError("Firestoreが初期化できませんでした"); setLoading(false); return; }
+
+      const unsubCat = db.collection(FS_COLL).doc(CAT_DOC).onSnapshot(
+        snap => {
+          if (snap.exists) {
+            const d = snap.data();
+            if (Array.isArray(d.data) && d.data.length > 0) setCategories(d.data);
+            else { fsSaveCategories(INITIAL_CATEGORIES); setCategories(INITIAL_CATEGORIES); }
+          } else {
+            fsSaveCategories(INITIAL_CATEGORIES);
+            setCategories(INITIAL_CATEGORIES);
+          }
+        },
+        err => { console.error("categories読み込みエラー:", err); setError(err.message); }
+      );
+
+      const unsubTpl = db.collection(FS_COLL).doc(TPL_DOC).onSnapshot(
+        snap => {
+          if (snap.exists) {
+            const d = snap.data();
+            if (Array.isArray(d.data)) setTemplates(d.data);
+          }
+          setLoading(false);
+        },
+        err => { console.error("templates読み込みエラー:", err); setError(err.message); setLoading(false); }
+      );
 
       return () => { unsubCat(); unsubTpl(); };
     }, []);
 
-    const saveCategories = useCallback(async (newCats) => {
-      setCategories(newCats);
+    const doSaveTemplates = useCallback(async (next) => {
+      setTemplates(next);
       setSyncing(true);
-      await saveCategoriesToFS(newCats);
-      setSyncing(false);
-    }, []);
-
-    const saveTemplates = useCallback(async (newTpls) => {
-      setTemplates(newTpls);
-      setSyncing(true);
-      await saveTemplatesToFS(newTpls);
-      setSyncing(false);
+      try { await fsSaveTemplates(next); }
+      catch(e) { alert("同期エラー: " + e.message); }
+      finally { setSyncing(false); }
     }, []);
 
     const handleAddTemplate = useCallback(async (categoryName) => {
-      const newTemp = { id: Date.now(), title:"新規アイテム", category:categoryName, itemType:"テンプレ", order:999, ja:"", en:"", flow:"" };
-      const next = [...templates, newTemp];
-      await saveTemplates(next);
-    }, [templates, saveTemplates]);
+      const newTemp = { id:Date.now(), title:"新規アイテム", category:categoryName, itemType:"テンプレ", order:999, ja:"", en:"", flow:"" };
+      await doSaveTemplates([...templates, newTemp]);
+    }, [templates, doSaveTemplates]);
 
     const handleUpdateTemplate = useCallback(async (updatedT) => {
       const exists = templates.find(p => p.id === updatedT.id);
       const next = exists ? templates.map(p => p.id === updatedT.id ? updatedT : p) : [...templates, updatedT];
-      await saveTemplates(next);
-    }, [templates, saveTemplates]);
+      await doSaveTemplates(next);
+    }, [templates, doSaveTemplates]);
 
     const handleDeleteTemplate = useCallback(async (id) => {
-      await saveTemplates(templates.filter(p => p.id !== id));
-    }, [templates, saveTemplates]);
+      await doSaveTemplates(templates.filter(p => p.id !== id));
+    }, [templates, doSaveTemplates]);
 
     const handleInsertTemplate = useCallback(async (draggedId, targetId, targetCategory) => {
       const draggedFile = templates.find(t => t.id === draggedId);
       if (!draggedFile) return;
       const oldCategory = draggedFile.category;
       const withoutDragged = templates.filter(t => t.id !== draggedId);
-      const targetCategoryFiles = withoutDragged.filter(t => t.category === targetCategory).sort((a,b) => (a.order||0)-(b.order||0));
-      const updatedDragged = { ...draggedFile, category: targetCategory };
+      const targetFiles = withoutDragged.filter(t => t.category === targetCategory).sort((a,b) => (a.order||0)-(b.order||0));
+      const moved = { ...draggedFile, category:targetCategory };
       if (targetId) {
-        const idx = targetCategoryFiles.findIndex(t => t.id === targetId);
-        if (idx !== -1) targetCategoryFiles.splice(idx, 0, updatedDragged);
-        else targetCategoryFiles.push(updatedDragged);
+        const idx = targetFiles.findIndex(t => t.id === targetId);
+        if (idx !== -1) targetFiles.splice(idx, 0, moved); else targetFiles.push(moved);
       } else {
-        targetCategoryFiles.push(updatedDragged);
+        targetFiles.push(moved);
       }
-      targetCategoryFiles.forEach((f, i) => f.order = i + 1);
-      let sourceCategoryFiles = [];
+      targetFiles.forEach((f,i) => f.order = i+1);
+      let sourceFiles = [];
       if (oldCategory !== targetCategory) {
-        sourceCategoryFiles = withoutDragged.filter(t => t.category === oldCategory).sort((a,b) => (a.order||0)-(b.order||0));
-        sourceCategoryFiles.forEach((f, i) => f.order = i + 1);
+        sourceFiles = withoutDragged.filter(t => t.category === oldCategory).sort((a,b) => (a.order||0)-(b.order||0));
+        sourceFiles.forEach((f,i) => f.order = i+1);
       }
-      const otherFiles = withoutDragged.filter(t => t.category !== targetCategory && t.category !== oldCategory);
-      await saveTemplates([...otherFiles, ...targetCategoryFiles, ...sourceCategoryFiles]);
-    }, [templates, saveTemplates]);
+      const others = withoutDragged.filter(t => t.category !== targetCategory && t.category !== oldCategory);
+      await doSaveTemplates([...others, ...targetFiles, ...sourceFiles]);
+    }, [templates, doSaveTemplates]);
 
-    const rootFolders = (Array.isArray(categories) ? categories : INITIAL_CATEGORIES).filter(c => c && c.parent === null);
+    if (error) {
+      return (
+        <div style={{ padding:40 }}>
+          <div className="error-box">
+            <strong>❌ 接続エラー</strong><br/>
+            {error}<br/><br/>
+            <small>FirebaseのFirestoreルールまたはAPIキーを確認してください。</small>
+          </div>
+        </div>
+      );
+    }
 
     if (loading) {
       return (
         <div className="loading-overlay">
           <div className="spinner"></div>
-          <div style={{ color:"var(--text-muted)", fontWeight:600 }}>Firestoreからデータを読み込み中...</div>
+          <div style={{ color:"var(--text-muted)", fontWeight:600 }}>データを読み込み中...</div>
         </div>
       );
     }
+
+    const rootFolders = (Array.isArray(categories) ? categories : INITIAL_CATEGORIES).filter(c => c && c.parent === null);
 
     return (
       <div>
@@ -408,7 +462,7 @@
               {syncing && (
                 <div className="sync-indicator">
                   <div className="sync-dot"></div>
-                  <span>同期中</span>
+                  <span>同期中...</span>
                 </div>
               )}
               <button className="btn btn-outline" onClick={() => setTheme(theme === 'matcha' ? 'kakishibu' : 'matcha')}>🎨 テーマ切替</button>
