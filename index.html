@@ -93,13 +93,11 @@
     }
 
     function LinkableText({ text, allTemplates, onLinkClick }) {
-      // エラー回避: テキストが存在しない、または文字列でない場合はそのまま返すか非表示にする
       if (!text || typeof text !== 'string') return null;
-      
-      const regex = /\[リンク:(\d+)\]/g;
-      if (!regex.test(text)) return <React.Fragment>{text}</React.Fragment>;
-      
-      const parts = text.split(regex);
+      // ★修正①: test()とsplit()で同じregexインスタンスを使うとlastIndexがズレるため分離
+      const hasLinks = /\[リンク:(\d+)\]/.test(text);
+      if (!hasLinks) return <React.Fragment>{text}</React.Fragment>;
+      const parts = text.split(/\[リンク:(\d+)\]/g);
       return (
         <React.Fragment>
           {parts.map((part, index) => {
@@ -207,7 +205,6 @@
       const catName = catObj.name;
       const [isOpen, setIsOpen] = useState(true);
       
-      // エラー回避: categoriesとtemplatesが確実に配列として扱われるようにする
       const safeCategories = Array.isArray(categories) ? categories : [];
       const safeTemplates = Array.isArray(templates) ? templates : [];
 
@@ -253,7 +250,6 @@
     }
 
     function App() {
-      // データの読み込み時にエラーが起きても確実に初期値に戻す安全対策
       const [categories, setCategories] = useState(() => {
         try {
           const saved = localStorage.getItem('app_categories');
@@ -282,7 +278,6 @@
       const [theme, setTheme] = useState(localStorage.getItem('app_theme') || 'matcha');
       useEffect(() => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('app_theme', theme); }, [theme]);
 
-      // 緊急リセット機能（どうしてもデータがおかしくなった時用）
       const handleFactoryReset = () => {
         if(confirm("【警告】すべてのデータを初期化しますか？画面がおかしい場合のみ実行してください。")) {
           localStorage.clear();
@@ -307,36 +302,55 @@
         setTemplates(prev => Array.isArray(prev) ? prev.filter(p => p.id !== id) : []);
       };
 
+      // ★修正②: 同カテゴリ内移動で要素が重複するバグを修正
       const handleInsertTemplate = (draggedId, targetId, targetCategory) => {
         setTemplates(prev => {
           if (!Array.isArray(prev)) return [];
-          let newTemplates = [...prev];
-          const draggedFile = newTemplates.find(t => t.id === draggedId);
+          
+          const draggedFile = prev.find(t => t.id === draggedId);
           if (!draggedFile) return prev;
           
-          newTemplates = newTemplates.filter(t => t.id !== draggedId);
           const oldCategory = draggedFile.category;
-          draggedFile.category = targetCategory;
-
-          const targetCategoryFiles = newTemplates.filter(t => t.category === targetCategory).sort((a, b) => (a.order || 0) - (b.order || 0));
           
+          // ドラッグ対象を除いたリスト
+          const withoutDragged = prev.filter(t => t.id !== draggedId);
+          
+          // 移動先カテゴリのファイル一覧（順序付き）
+          const targetCategoryFiles = withoutDragged
+            .filter(t => t.category === targetCategory)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+          
+          // 挿入位置を決める
+          const updatedDragged = { ...draggedFile, category: targetCategory };
           if (targetId) {
             const targetIndex = targetCategoryFiles.findIndex(t => t.id === targetId);
-            if (targetIndex !== -1) { targetCategoryFiles.splice(targetIndex, 0, draggedFile); } 
-            else { targetCategoryFiles.push(draggedFile); }
+            if (targetIndex !== -1) {
+              targetCategoryFiles.splice(targetIndex, 0, updatedDragged);
+            } else {
+              targetCategoryFiles.push(updatedDragged);
+            }
           } else {
-            targetCategoryFiles.push(draggedFile);
+            targetCategoryFiles.push(updatedDragged);
           }
-
+          
+          // order を振り直す
           targetCategoryFiles.forEach((file, index) => { file.order = index + 1; });
-
+          
+          // 移動元カテゴリのファイル一覧（別カテゴリへ移動した場合のみ再計算）
+          let sourceCategoryFiles = [];
           if (oldCategory !== targetCategory) {
-            const sourceCategoryFiles = newTemplates.filter(t => t.category === oldCategory).sort((a, b) => (a.order || 0) - (b.order || 0));
+            sourceCategoryFiles = withoutDragged
+              .filter(t => t.category === oldCategory)
+              .sort((a, b) => (a.order || 0) - (b.order || 0));
             sourceCategoryFiles.forEach((file, index) => { file.order = index + 1; });
           }
-
-          const unchanged = newTemplates.filter(t => t.category !== targetCategory && t.category !== oldCategory);
-          return [...unchanged, ...targetCategoryFiles, ...newTemplates.filter(t => t.category === oldCategory)];
+          
+          // それ以外のファイル（両カテゴリに含まれないもの）
+          const otherFiles = withoutDragged.filter(t => 
+            t.category !== targetCategory && t.category !== oldCategory
+          );
+          
+          return [...otherFiles, ...targetCategoryFiles, ...sourceCategoryFiles];
         });
       };
 
