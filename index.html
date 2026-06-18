@@ -7,9 +7,8 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Firebase compat版（importを使わないscriptタグ方式） -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase bundle (firebase-bundle.js をこのHTMLと同じフォルダに置いてください) -->
+  <script src="firebase-bundle.js"></script>
   <style>
     :root {
       --bg-color:#EAE8E1;--card-bg:#F8F7F4;--text-main:#333333;--text-muted:#666666;
@@ -67,8 +66,8 @@
     messagingSenderId: "475374524236",
     appId: "1:475374524236:web:b39a70aebc72bb4172e1e9"
   };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+  const app = window.__firebaseInitializeApp(firebaseConfig);
+  const db = window.__firebaseGetFirestore(app);
 </script>
 
 <script type="text/babel">
@@ -83,11 +82,15 @@
 
   const FS_COLL = "mailApp";
 
+  const __doc = window.__firebaseDoc;
+  const __setDoc = window.__firebaseSetDoc;
+  const __onSnapshot = window.__firebaseOnSnapshot;
+
   async function saveCats(data) {
-    await db.collection(FS_COLL).doc("categories").set({ data });
+    await __setDoc(__doc(db, FS_COLL, "categories"), { data });
   }
   async function saveTpls(data) {
-    await db.collection(FS_COLL).doc("mailTemplates").set({ data });
+    await __setDoc(__doc(db, FS_COLL, "mailTemplates"), { data });
   }
 
   function CopyBtn({ text }) {
@@ -278,8 +281,8 @@
     useEffect(() => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('app_theme', theme); }, [theme]);
 
     useEffect(() => {
-      const unsubCat = db.collection(FS_COLL).doc("categories").onSnapshot(snap => {
-        if (snap.exists) {
+      const unsubCat = __onSnapshot(__doc(db, FS_COLL, "categories"), snap => {
+        if (snap.exists()) {
           const d = snap.data();
           if (Array.isArray(d.data)) setCategories(d.data);
         } else {
@@ -287,8 +290,8 @@
           setCategories(INITIAL_CATEGORIES);
         }
       });
-      const unsubTpl = db.collection(FS_COLL).doc("mailTemplates").onSnapshot(snap => {
-        if (snap.exists) {
+      const unsubTpl = __onSnapshot(__doc(db, FS_COLL, "mailTemplates"), snap => {
+        if (snap.exists()) {
           const d = snap.data();
           if (Array.isArray(d.data)) setTemplates(d.data);
         } else {
