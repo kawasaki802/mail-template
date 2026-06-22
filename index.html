@@ -22,13 +22,12 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;}
 button{cursor:pointer;font-family:inherit;}
-
-/* ヘッダー */
 #hdr{background:var(--card);border-bottom:1px solid var(--border);padding:14px 24px;position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);}
 #hdr h1{font-size:20px;font-weight:700;}
-.hdr-btns{display:flex;gap:8px;align-items:center;}
-
-/* ボタン */
+.hdr-r{display:flex;gap:8px;align-items:center;}
+.sync{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:pulse 1.4s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-size:14px;font-weight:600;border:1px solid transparent;transition:all .15s;}
 .btn-p{background:var(--primary);color:#fff;}
 .btn-p:hover{background:var(--primary-h);}
@@ -37,131 +36,169 @@ button{cursor:pointer;font-family:inherit;}
 .btn-ghost{background:none;border:none;color:var(--muted);padding:6px 10px;font-size:13px;font-weight:600;}
 .btn-ghost:hover{color:var(--text);}
 .btn-danger{background:none;border:none;color:var(--accent);padding:6px 10px;font-size:13px;font-weight:600;}
-
-/* メイン */
 #main{max-width:960px;margin:0 auto;padding:32px 20px 100px;}
-
-/* セクション */
 .section{margin-top:52px;margin-bottom:32px;}
-.section-hdr{border-bottom:2px solid var(--border-s);padding-bottom:14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.section-hdr{border-bottom:2px solid var(--border-s);padding-bottom:14px;margin-bottom:16px;}
 .section-title{font-size:24px;font-weight:800;}
-
-/* フォルダ */
 .folder{margin-bottom:14px;}
 .folder-inner{background:var(--card);border-radius:var(--rl);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);}
 .folder-inner.nested{border-left:4px solid var(--primary);margin-left:28px;}
 .folder-hdr{padding:14px 20px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
 .folder-hdr:hover{background:var(--bg);}
-.folder-arrow{color:var(--muted);font-size:13px;width:16px;}
 .folder-body{padding:16px;background:var(--bg);border-top:1px solid var(--border);}
-
-/* テンプレカード */
 .tcard{background:var(--card);border-radius:var(--rl);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);margin-bottom:2px;}
 .tcard.hilite{border:2px solid var(--primary);box-shadow:0 0 0 4px var(--primary-l);}
+.tcard.dragging{opacity:.4;}
 .tcard-hdr{padding:13px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
 .tcard-hdr:hover{background:var(--bg);}
-.drag-handle{color:var(--border-s);cursor:grab;font-size:15px;padding:2px 4px;}
-.drag-handle:active{cursor:grabbing;}
+.drag-handle{color:var(--border-s);cursor:grab;font-size:15px;padding:2px 6px;touch-action:none;}
 .badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid;white-space:nowrap;}
 .badge-tpl{background:var(--primary-l);color:var(--primary);border-color:var(--primary);}
 .badge-flow{background:var(--accent-l);color:var(--accent);border-color:var(--accent);}
 .tcard-title{flex:1;font-size:16px;font-weight:600;}
 .tcard-actions{display:flex;gap:4px;}
 .tcard-body{padding:0 18px 18px;border-top:1px solid var(--border);}
-
-/* コンテンツ */
 .lang-tabs{display:flex;gap:8px;padding-top:16px;margin-bottom:14px;align-items:center;}
-.lang-tabs .ml{margin-left:auto;}
+.ml{margin-left:auto;}
 pre.content{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:16px 20px;font-size:15px;line-height:1.9;white-space:pre-wrap;word-break:break-word;font-family:inherit;}
 .link-btn{background:var(--card);color:var(--primary);border:1px solid var(--primary);border-radius:6px;padding:3px 8px;margin:0 3px;font-size:13px;font-weight:600;cursor:pointer;}
 .link-btn:hover{background:var(--primary-l);}
-
-/* 編集フォーム */
 .edit-form{padding:20px;background:var(--card);border-radius:var(--rl);border:2px solid var(--primary);box-shadow:0 0 0 4px var(--primary-l);}
 .form-row{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
-.form-group{display:flex;flex-direction:column;gap:6px;}
-.form-group.flex2{flex:2;min-width:180px;}
-.form-group.w140{width:140px;}
+.form-group{display:flex;flex-direction:column;gap:6px;flex:1;min-width:160px;}
+.form-group.w140{flex:none;width:140px;}
 .form-label{font-size:12px;color:var(--muted);font-weight:700;}
 .form-input{padding:10px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;font-family:inherit;width:100%;}
 .form-input:focus{outline:none;border-color:var(--primary);}
 textarea.form-input{resize:vertical;}
-.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px;}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;}
 .flow-area{background:var(--accent-l);border-radius:10px;padding:14px;margin-bottom:14px;}
 .flow-label{font-size:12px;color:var(--accent);font-weight:700;margin-bottom:8px;}
-
-/* ドロップゾーン */
 .dz{height:10px;border-radius:var(--r);transition:.15s;margin:-3px 0;position:relative;z-index:10;}
 .dz.over{height:40px;background:var(--primary-l);border:2px dashed var(--primary);margin:4px 0;display:flex;align-items:center;justify-content:center;}
 .dz-label{font-size:12px;color:var(--primary);font-weight:700;display:none;}
 .dz.over .dz-label{display:block;}
-
-/* ローディング */
-#loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:14px;}
+#overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:14px;}
 .spinner{width:36px;height:36px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-
-/* 通知 */
-#toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:10px 18px;border-radius:var(--r);font-size:14px;font-weight:600;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;z-index:999;}
+#toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:10px 18px;border-radius:var(--r);font-size:14px;font-weight:600;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;z-index:9999;}
 #toast.show{opacity:1;transform:translateY(0);}
 </style>
 </head>
 <body>
 
-<div id="loading"><div class="spinner"></div><span style="color:var(--muted);font-weight:600">読み込み中...</span></div>
+<div id="overlay">
+  <div class="spinner"></div>
+  <span style="color:var(--muted);font-weight:600">データを読み込み中...</span>
+</div>
 <div id="toast"></div>
 
-<div id="hdr" style="display:none">
+<div id="hdr">
   <h1>📨 テンプレ管理システム</h1>
-  <div class="hdr-btns">
+  <div class="hdr-r">
+    <div class="sync" id="sync-indicator" style="display:none">
+      <div class="sync-dot"></div>同期中
+    </div>
     <button class="btn btn-o" id="theme-btn">🎨 テーマ</button>
   </div>
 </div>
-<div id="main" style="display:none"></div>
+<div id="main"></div>
 
 <script>
-// =============================================
-// データ管理
-// =============================================
+// =====================
+// Supabase設定
+// =====================
+const SUPABASE_URL = 'https://shsowsyuvqwfvodnblhp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoc293c3l1dnF3ZnZvZG5ibGhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxOTMwMjIsImV4cCI6MjA2NDc2OTAyMn0.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+
 const INIT_CATS = [
-  {name:"📝 予約〜チェックイン前", parent:null, type:"section"},
-  {name:"予約前", parent:"📝 予約〜チェックイン前", type:"folder"},
-  {name:"マニュアル未読", parent:"📝 予約〜チェックイン前", type:"folder"},
-  {name:"URLが見れない", parent:"📝 予約〜チェックイン前", type:"folder"},
+  {name:"📝 予約〜チェックイン前",parent:null,type:"section"},
+  {name:"予約前",parent:"📝 予約〜チェックイン前",type:"folder"},
+  {name:"マニュアル未読",parent:"📝 予約〜チェックイン前",type:"folder"},
+  {name:"URLが見れない",parent:"📝 予約〜チェックイン前",type:"folder"},
 ];
 
-let state = {
-  cats: [],
-  tpls: [],
-  theme: '',
-  dragging: null,
-  editingId: null,
-  openCards: new Set(),
-  openFolders: {},
-  langMap: {},
-};
-
-function loadState() {
-  try {
-    const cats = JSON.parse(localStorage.getItem('cats') || 'null');
-    const tpls = JSON.parse(localStorage.getItem('tpls') || 'null');
-    state.cats = Array.isArray(cats) ? cats : JSON.parse(JSON.stringify(INIT_CATS));
-    state.tpls = Array.isArray(tpls) ? tpls : [];
-    state.theme = localStorage.getItem('theme') || '';
-    // デフォルトでフォルダを開く
-    state.cats.forEach(c => { state.openFolders[c.name] = true; });
-  } catch(e) {
-    state.cats = JSON.parse(JSON.stringify(INIT_CATS));
-    state.tpls = [];
-  }
+// =====================
+// Supabase API
+// =====================
+async function sbGet(key) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/app_data?key=eq.${key}&select=value`, {
+    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY}
+  });
+  const d = await r.json();
+  return d.length > 0 ? d[0].value : null;
 }
 
-function saveCats() { localStorage.setItem('cats', JSON.stringify(state.cats)); }
-function saveTpls() { localStorage.setItem('tpls', JSON.stringify(state.tpls)); }
+async function sbSet(key, value) {
+  await fetch(`${SUPABASE_URL}/rest/v1/app_data?key=eq.${key}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({value, updated_at: new Date().toISOString()})
+  });
+}
 
-// =============================================
+// =====================
+// ポーリング（5秒ごとに他の人の変更を取得）
+// =====================
+let pollTimer = null;
+let lastCatsHash = '';
+let lastTplsHash = '';
+
+function startPolling() {
+  pollTimer = setInterval(async () => {
+    try {
+      const cats = await sbGet('categories');
+      const tpls = await sbGet('templates');
+      const ch = JSON.stringify(cats);
+      const th = JSON.stringify(tpls);
+      if (ch !== lastCatsHash || th !== lastTplsHash) {
+        if (ch !== lastCatsHash) { state.cats = Array.isArray(cats) && cats.length > 0 ? cats : INIT_CATS; lastCatsHash = ch; }
+        if (th !== lastTplsHash) { state.tpls = Array.isArray(tpls) ? tpls : []; lastTplsHash = th; }
+        render();
+      }
+    } catch(e) {}
+  }, 5000);
+}
+
+// =====================
+// 状態
+// =====================
+const state = {
+  cats: [], tpls: [],
+  theme: localStorage.getItem('theme') || '',
+  openCards: new Set(),
+  openFolders: {},
+  editingId: null, _editBuf: null,
+  _hilite: null, dragging: null,
+  langMap: {},
+  saving: false,
+};
+
+async function saveCats() {
+  showSync(true);
+  lastCatsHash = JSON.stringify(state.cats);
+  await sbSet('categories', state.cats);
+  showSync(false);
+}
+async function saveTpls() {
+  showSync(true);
+  lastTplsHash = JSON.stringify(state.tpls);
+  await sbSet('templates', state.tpls);
+  showSync(false);
+}
+
+function showSync(on) {
+  document.getElementById('sync-indicator').style.display = on ? 'flex' : 'none';
+}
+
+// =====================
 // ユーティリティ
-// =============================================
+// =====================
 function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -169,9 +206,9 @@ function toast(msg) {
   setTimeout(() => el.classList.remove('show'), 1800);
 }
 
-function el(tag, attrs={}, ...children) {
+function h(tag, attrs, ...children) {
   const e = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
     if (k === 'class') e.className = v;
     else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v);
     else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
@@ -184,28 +221,23 @@ function el(tag, attrs={}, ...children) {
   return e;
 }
 
-function renderText(text, allTpls, onLinkClick) {
-  const span = document.createDocumentFragment();
-  if (!text) return span;
-  const parts = text.split(/\[リンク:(\d+)\]/g);
-  parts.forEach((part, i) => {
+function renderText(text, onLink) {
+  const frag = document.createDocumentFragment();
+  if (!text) return frag;
+  text.split(/\[リンク:(\d+)\]/g).forEach((part, i) => {
     if (i % 2 === 1) {
       const id = Number(part);
-      const t = allTpls.find(x => x.id === id);
-      const btn = el('button', {'class':'link-btn', 'onClick': () => onLinkClick(id)}, '🔗 ' + (t ? t.title : `ID:${id}`));
-      span.appendChild(btn);
+      const t = state.tpls.find(x => x.id === id);
+      frag.appendChild(h('button', {'class':'link-btn', 'onClick': () => onLink(id)}, '🔗 ' + (t ? t.title : `ID:${id}`)));
     } else if (part) {
-      span.appendChild(document.createTextNode(part));
+      frag.appendChild(document.createTextNode(part));
     }
   });
-  return span;
+  return frag;
 }
 
-// =============================================
-// ドロップゾーン
-// =============================================
 function makeDropZone(label, onDrop) {
-  const dz = el('div', {'class':'dz'}, el('span', {'class':'dz-label'}, label));
+  const dz = h('div', {'class':'dz'}, h('span', {'class':'dz-label'}, label));
   dz.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('over'); });
   dz.addEventListener('dragleave', e => { e.stopPropagation(); dz.classList.remove('over'); });
   dz.addEventListener('drop', e => {
@@ -215,71 +247,91 @@ function makeDropZone(label, onDrop) {
   return dz;
 }
 
-// =============================================
+function hiliteCard(id) {
+  state._hilite = id;
+  state.openCards.add(id);
+  render();
+  setTimeout(() => { document.getElementById('c'+id)?.scrollIntoView({behavior:'smooth',block:'center'}); }, 50);
+  setTimeout(() => { state._hilite = null; render(); }, 2200);
+}
+
+async function moveTpl(drag, targetId, targetCat) {
+  if (drag.type !== 'tpl') return;
+  const dragId = drag.id;
+  const item = state.tpls.find(t => t.id === dragId);
+  if (!item) return;
+  const oldCat = item.category;
+  const rest = state.tpls.filter(t => t.id !== dragId);
+  const tgtItems = rest.filter(t => t.category === targetCat).sort((a,b) => (a.order||0)-(b.order||0));
+  const moved = {...item, category: targetCat};
+  if (targetId !== null) {
+    const i = tgtItems.findIndex(t => t.id === targetId);
+    tgtItems.splice(i !== -1 ? i : tgtItems.length, 0, moved);
+  } else tgtItems.push(moved);
+  tgtItems.forEach((t, i) => t.order = i + 1);
+  let srcItems = [];
+  if (oldCat !== targetCat) {
+    srcItems = rest.filter(t => t.category === oldCat).sort((a,b) => (a.order||0)-(b.order||0));
+    srcItems.forEach((t, i) => t.order = i + 1);
+  }
+  state.tpls = [...rest.filter(t => t.category !== targetCat && t.category !== oldCat), ...tgtItems, ...srcItems];
+  render();
+  await saveTpls();
+}
+
+// =====================
 // テンプレカード
-// =============================================
-function makeTemplateCard(t, onRender) {
+// =====================
+function makeCard(t) {
   const isFlow = t.itemType === '流れ';
   const isOpen = state.openCards.has(t.id);
   const isEditing = state.editingId === t.id;
   const lang = state.langMap[t.id] || 'ja';
   const isHilite = state._hilite === t.id;
 
-  const card = el('div', {'class': 'tcard' + (isHilite ? ' hilite' : ''), 'id': 'c' + t.id});
+  const card = h('div', {'class':'tcard' + (isHilite?' hilite':''), 'id':'c'+t.id});
 
-  // 編集モード
   if (isEditing) {
     const ed = state._editBuf || {...t};
     state._editBuf = ed;
-
-    const titleInput = el('input', {'class':'form-input', 'type':'text', 'value': ed.title || ''});
+    const titleInput = h('input', {'class':'form-input','type':'text'});
+    titleInput.value = ed.title || '';
     titleInput.addEventListener('input', () => ed.title = titleInput.value);
-
-    const typeSelect = el('select', {'class':'form-input'});
-    ['テンプレ','流れ'].forEach(v => {
-      const o = el('option', {'value':v}, v);
-      if (ed.itemType === v) o.selected = true;
-      typeSelect.appendChild(o);
-    });
-    typeSelect.addEventListener('change', () => { ed.itemType = typeSelect.value; state._editBuf = ed; onRender(); });
-
-    const jaArea = el('textarea', {'class':'form-input', 'style':{height:'160px'}}, '');
+    const typeSelect = h('select', {'class':'form-input'});
+    ['テンプレ','流れ'].forEach(v => { const o = h('option',{'value':v},v); if(ed.itemType===v)o.selected=true; typeSelect.appendChild(o); });
+    typeSelect.addEventListener('change', () => { ed.itemType = typeSelect.value; state._editBuf = ed; render(); });
+    const jaArea = h('textarea', {'class':'form-input','style':{height:'160px'}});
     jaArea.value = ed.ja || '';
     jaArea.addEventListener('input', () => ed.ja = jaArea.value);
-
-    const enArea = el('textarea', {'class':'form-input', 'style':{height:'120px'}}, '');
+    const enArea = h('textarea', {'class':'form-input','style':{height:'120px'}});
     enArea.value = ed.en || '';
     enArea.addEventListener('input', () => ed.en = enArea.value);
-
-    const flowArea = el('textarea', {'class':'form-input', 'style':{height:'180px'}}, '');
+    const flowArea = h('textarea', {'class':'form-input','style':{height:'180px'}});
     flowArea.value = ed.flow || '';
     flowArea.addEventListener('input', () => ed.flow = flowArea.value);
 
     const isFlowEdit = ed.itemType === '流れ';
-
-    const form = el('div', {'class':'edit-form'},
-      el('div', {'class':'form-row'},
-        el('div', {'class':'form-group flex2'}, el('label', {'class':'form-label'}, 'タイトル'), titleInput),
-        el('div', {'class':'form-group w140'}, el('label', {'class':'form-label'}, 'タイプ'), typeSelect),
+    const form = h('div', {'class':'edit-form'},
+      h('div', {'class':'form-row'},
+        h('div', {'class':'form-group'}, h('label', {'class':'form-label'}, 'タイトル'), titleInput),
+        h('div', {'class':'form-group w140'}, h('label', {'class':'form-label'}, 'タイプ'), typeSelect),
       ),
-      ...(isFlowEdit ? [
-        el('div', {'class':'flow-area'},
-          el('div', {'class':'flow-label'}, '📋 対応の流れ・社内マニュアル'),
-          flowArea
-        )
-      ] : [
-        el('div', {'class':'form-group', 'style':{marginBottom:'12px'}}, el('label', {'class':'form-label'}, '🇯🇵 日本語'), jaArea),
-        el('div', {'class':'form-group', 'style':{marginBottom:'14px'}}, el('label', {'class':'form-label'}, '🇬🇧 English'), enArea),
-      ]),
-      el('div', {'class':'form-actions'},
-        el('button', {'class':'btn btn-o', 'onClick': () => { state.editingId = null; state._editBuf = null; onRender(); }}, 'キャンセル'),
-        el('button', {'class':'btn btn-p', 'onClick': () => {
+      ...(isFlowEdit
+        ? [h('div', {'class':'flow-area'}, h('div',{'class':'flow-label'},'📋 対応の流れ・社内マニュアル'), flowArea)]
+        : [
+            h('div', {'class':'form-group','style':{marginBottom:'12px'}}, h('label',{'class':'form-label'},'🇯🇵 日本語'), jaArea),
+            h('div', {'class':'form-group','style':{marginBottom:'14px'}}, h('label',{'class':'form-label'},'🇬🇧 English'), enArea),
+          ]
+      ),
+      h('div', {'class':'form-actions'},
+        h('button', {'class':'btn btn-o', 'onClick': () => { state.editingId=null; state._editBuf=null; render(); }}, 'キャンセル'),
+        h('button', {'class':'btn btn-p', 'onClick': async () => {
           const idx = state.tpls.findIndex(x => x.id === ed.id);
-          if (idx !== -1) state.tpls[idx] = {...ed};
-          else state.tpls.push({...ed});
-          saveTpls();
-          state.editingId = null; state._editBuf = null; onRender();
-          toast('保存しました');
+          if (idx !== -1) state.tpls[idx] = {...ed}; else state.tpls.push({...ed});
+          state.editingId = null; state._editBuf = null;
+          render();
+          await saveTpls();
+          toast('保存しました ✓');
         }}, '保存する'),
       )
     );
@@ -287,208 +339,137 @@ function makeTemplateCard(t, onRender) {
     return card;
   }
 
-  // 通常表示
-  const hdr = el('div', {'class':'tcard-hdr'});
-
-  const handle = el('span', {'class':'drag-handle'}, '☰');
+  const hdr = h('div', {'class':'tcard-hdr'});
+  const handle = h('span', {'class':'drag-handle'}, '☰');
   handle.draggable = true;
   handle.addEventListener('dragstart', e => {
     state.dragging = {type:'tpl', id:t.id, cat:t.category};
     e.dataTransfer.effectAllowed = 'move';
-    setTimeout(() => card.style.opacity = '.4', 0);
+    setTimeout(() => card.classList.add('dragging'), 0);
     e.stopPropagation();
   });
-  handle.addEventListener('dragend', () => { card.style.opacity = '1'; state.dragging = null; });
-
-  const badge = el('span', {'class':'badge ' + (isFlow ? 'badge-flow' : 'badge-tpl')}, t.itemType || 'テンプレ');
-  const title = el('span', {'class':'tcard-title'}, t.title || '無題');
-  const actions = el('div', {'class':'tcard-actions'},
-    el('button', {'class':'btn-ghost', 'onClick': e => {
-      e.stopPropagation();
-      state.editingId = t.id; state._editBuf = {...t}; onRender();
-    }}, '✏️ 編集'),
-    el('button', {'class':'btn-danger', 'onClick': e => {
-      e.stopPropagation();
-      if (confirm('削除しますか？')) {
-        state.tpls = state.tpls.filter(x => x.id !== t.id);
-        saveTpls(); onRender();
-      }
-    }}, '🗑️'),
-  );
+  handle.addEventListener('dragend', () => { card.classList.remove('dragging'); state.dragging = null; });
 
   hdr.appendChild(handle);
-  hdr.appendChild(badge);
-  hdr.appendChild(title);
-  hdr.appendChild(actions);
-  hdr.addEventListener('click', () => {
-    if (isOpen) state.openCards.delete(t.id); else state.openCards.add(t.id);
-    onRender();
-  });
+  hdr.appendChild(h('span', {'class':'badge '+(isFlow?'badge-flow':'badge-tpl')}, t.itemType||'テンプレ'));
+  hdr.appendChild(h('span', {'class':'tcard-title'}, t.title||'無題'));
+  const acts = h('div', {'class':'tcard-actions'},
+    h('button', {'class':'btn-ghost', 'onClick': e => { e.stopPropagation(); state.editingId=t.id; state._editBuf={...t}; render(); }}, '✏️ 編集'),
+    h('button', {'class':'btn-danger', 'onClick': e => { e.stopPropagation(); if(confirm('削除しますか？')){ state.tpls=state.tpls.filter(x=>x.id!==t.id); render(); saveTpls(); }}}, '🗑️'),
+  );
+  hdr.appendChild(acts);
+  hdr.addEventListener('click', () => { isOpen ? state.openCards.delete(t.id) : state.openCards.add(t.id); render(); });
   card.appendChild(hdr);
 
   if (isOpen) {
-    const body = el('div', {'class':'tcard-body'});
-
+    const body = h('div', {'class':'tcard-body'});
     if (isFlow) {
-      const pre = el('pre', {'class':'content'});
-      pre.appendChild(renderText(t.flow || '', state.tpls, id => hiliteCard(id, onRender)));
-      body.appendChild(el('div', {'style':{paddingTop:'14px'}}, pre));
+      const pre = h('pre', {'class':'content'});
+      pre.appendChild(renderText(t.flow||'', hiliteCard));
+      body.appendChild(h('div', {'style':{paddingTop:'14px'}}, pre));
     } else {
-      const tabs = el('div', {'class':'lang-tabs'});
-      const btnJa = el('button', {'class':'btn ' + (lang==='ja'?'btn-p':'btn-o'), 'onClick': () => { state.langMap[t.id]='ja'; onRender(); }}, '🇯🇵 日本語');
-      const btnEn = el('button', {'class':'btn ' + (lang==='en'?'btn-p':'btn-o'), 'onClick': () => { state.langMap[t.id]='en'; onRender(); }}, '🇬🇧 English');
-      const cur = lang === 'ja' ? (t.ja || '') : (t.en || '');
-      const copyBtn = el('button', {'class':'btn btn-o ml', 'onClick': () => {
-        if (!cur) return;
-        navigator.clipboard.writeText(cur).then(() => toast('コピーしました ✓'));
-      }}, cur ? '📋 コピー' : '空です');
+      const cur = lang==='ja' ? (t.ja||'') : (t.en||'');
+      const tabs = h('div', {'class':'lang-tabs'},
+        h('button', {'class':'btn '+(lang==='ja'?'btn-p':'btn-o'), 'onClick':()=>{state.langMap[t.id]='ja';render();}}, '🇯🇵 日本語'),
+        h('button', {'class':'btn '+(lang==='en'?'btn-p':'btn-o'), 'onClick':()=>{state.langMap[t.id]='en';render();}}, '🇬🇧 English'),
+      );
+      const copyBtn = h('button', {'class':'btn btn-o ml', 'onClick': () => { if(cur) navigator.clipboard.writeText(cur).then(()=>toast('コピーしました ✓')); }}, cur?'📋 コピー':'空です');
       if (!cur) copyBtn.disabled = true;
-      tabs.appendChild(btnJa);
-      tabs.appendChild(btnEn);
       tabs.appendChild(copyBtn);
-
-      const pre = el('pre', {'class':'content'});
-      pre.appendChild(renderText(cur, state.tpls, id => hiliteCard(id, onRender)));
+      const pre = h('pre', {'class':'content'});
+      pre.appendChild(renderText(cur, hiliteCard));
       body.appendChild(tabs);
       body.appendChild(pre);
     }
     card.appendChild(body);
   }
-
   return card;
 }
 
-function hiliteCard(id, onRender) {
-  state._hilite = id;
-  state.openCards.add(id);
-  onRender();
-  setTimeout(() => {
-    const el = document.getElementById('c' + id);
-    if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
-  }, 50);
-  setTimeout(() => { state._hilite = null; onRender(); }, 2200);
-}
-
-// =============================================
+// =====================
 // フォルダ
-// =============================================
-function makeFolder(cat, onRender) {
+// =====================
+function makeFolder(cat) {
   const nm = cat.name;
   const children = state.cats.filter(c => c.parent === nm);
   const items = state.tpls.filter(t => t.category === nm).sort((a,b) => (a.order||0)-(b.order||0));
   const isOpen = state.openFolders[nm] !== false;
 
-  const moveTpl = (drag, targetId, targetCat) => {
-    if (drag.type !== 'tpl') return;
-    const dragId = drag.id;
-    const item = state.tpls.find(t => t.id === dragId);
-    if (!item) return;
-    const oldCat = item.category;
-    const rest = state.tpls.filter(t => t.id !== dragId);
-    const tgtItems = rest.filter(t => t.category === targetCat).sort((a,b) => (a.order||0)-(b.order||0));
-    const moved = {...item, category: targetCat};
-    if (targetId !== null) {
-      const i = tgtItems.findIndex(t => t.id === targetId);
-      tgtItems.splice(i !== -1 ? i : tgtItems.length, 0, moved);
-    } else {
-      tgtItems.push(moved);
-    }
-    tgtItems.forEach((t, i) => t.order = i + 1);
-    let srcItems = [];
-    if (oldCat !== targetCat) {
-      srcItems = rest.filter(t => t.category === oldCat).sort((a,b) => (a.order||0)-(b.order||0));
-      srcItems.forEach((t, i) => t.order = i + 1);
-    }
-    state.tpls = [...rest.filter(t => t.category !== targetCat && t.category !== oldCat), ...tgtItems, ...srcItems];
-    saveTpls();
-    onRender();
-  };
+  const drop = (e, targetId=null) => { e.preventDefault(); if(state.dragging) moveTpl(state.dragging, targetId, nm); };
 
   if (cat.type === 'section') {
-    const sec = el('div', {'class':'section'});
-    const hdr = el('div', {'class':'section-hdr'});
-    hdr.appendChild(el('div', {'class':'section-title'}, nm));
-    hdr.addEventListener('dragover', e => e.preventDefault());
-    hdr.addEventListener('drop', e => { e.preventDefault(); if(state.dragging) moveTpl(state.dragging, null, nm); });
-    sec.appendChild(hdr);
-    const body = el('div', {'style':{paddingLeft:'8px'}});
-    children.forEach(c => body.appendChild(makeFolder(c, onRender)));
+    const sec = h('div', {'class':'section'});
+    const shdr = h('div', {'class':'section-hdr'}, h('div', {'class':'section-title'}, nm));
+    shdr.addEventListener('dragover', e => e.preventDefault());
+    shdr.addEventListener('drop', e => drop(e));
+    sec.appendChild(shdr);
+    const body = h('div', {'style':{paddingLeft:'8px'}});
+    children.forEach(c => body.appendChild(makeFolder(c)));
     items.forEach(t => {
       body.appendChild(makeDropZone('ここに挿入', d => moveTpl(d, t.id, nm)));
-      body.appendChild(makeTemplateCard(t, onRender));
+      body.appendChild(makeCard(t));
     });
     body.appendChild(makeDropZone(`${nm}の末尾に追加`, d => moveTpl(d, null, nm)));
     sec.appendChild(body);
     return sec;
   }
 
-  // フォルダ
-  const wrap = el('div', {'class':'folder'});
-  const inner = el('div', {'class':'folder-inner' + (cat.parent !== null ? ' nested' : '')});
+  const wrap = h('div', {'class':'folder'});
+  const inner = h('div', {'class':'folder-inner'+(cat.parent?' nested':'')});
+  const fhdr = h('div', {'class':'folder-hdr'});
+  fhdr.addEventListener('dragover', e => e.preventDefault());
+  fhdr.addEventListener('drop', e => { drop(e); state.openFolders[nm]=true; });
 
-  const hdr = el('div', {'class':'folder-hdr'});
-  hdr.addEventListener('dragover', e => e.preventDefault());
-  hdr.addEventListener('drop', e => { e.preventDefault(); if(state.dragging) { moveTpl(state.dragging, null, nm); state.openFolders[nm] = true; } });
-
-  const arrow = el('span', {'class':'folder-arrow'}, isOpen ? '▼' : '▶');
-  const icon = el('span', {}, '📂');
-  const label = el('span', {'style':{flex:'1', fontWeight:'700', fontSize:'16px', marginLeft:'6px'}}, nm);
-  const addBtn = el('button', {'class':'btn btn-p', 'onClick': e => {
+  fhdr.appendChild(h('span', {'style':{color:'var(--muted)',fontSize:'13px',width:'16px'}}, isOpen?'▼':'▶'));
+  fhdr.appendChild(h('span', {}, '📂'));
+  fhdr.appendChild(h('span', {'style':{flex:'1',fontWeight:'700',fontSize:'16px',marginLeft:'6px'}}, nm));
+  const addBtn = h('button', {'class':'btn btn-p', 'onClick': async e => {
     e.stopPropagation();
     const id = Date.now();
-    state.tpls.push({id, title:'新規アイテム', category:nm, itemType:'テンプレ', order:999, ja:'', en:'', flow:''});
-    saveTpls();
+    const newT = {id, title:'新規アイテム', category:nm, itemType:'テンプレ', order:999, ja:'', en:'', flow:''};
+    state.tpls.push(newT);
     state.openFolders[nm] = true;
     state.editingId = id;
-    state._editBuf = state.tpls[state.tpls.length - 1];
-    onRender();
+    state._editBuf = newT;
+    render();
+    await saveTpls();
   }}, '➕ 追加');
-
-  hdr.appendChild(arrow);
-  hdr.appendChild(icon);
-  hdr.appendChild(label);
-  hdr.appendChild(addBtn);
-  hdr.addEventListener('click', e => {
+  fhdr.appendChild(addBtn);
+  fhdr.addEventListener('click', e => {
     if (e.target === addBtn || addBtn.contains(e.target)) return;
-    state.openFolders[nm] = !isOpen;
-    onRender();
+    state.openFolders[nm] = !isOpen; render();
   });
-  inner.appendChild(hdr);
+  inner.appendChild(fhdr);
 
   if (isOpen) {
-    const body = el('div', {'class':'folder-body'});
-    children.forEach(c => body.appendChild(makeFolder(c, onRender)));
+    const fbody = h('div', {'class':'folder-body'});
+    children.forEach(c => fbody.appendChild(makeFolder(c)));
     items.forEach(t => {
-      body.appendChild(makeDropZone('ここに挿入', d => moveTpl(d, t.id, nm)));
-      body.appendChild(makeTemplateCard(t, onRender));
+      fbody.appendChild(makeDropZone('ここに挿入', d => moveTpl(d, t.id, nm)));
+      fbody.appendChild(makeCard(t));
     });
     if (children.length > 0 || items.length > 0) {
-      body.appendChild(makeDropZone(`${nm}の末尾に追加`, d => moveTpl(d, null, nm)));
+      fbody.appendChild(makeDropZone(`${nm}の末尾に追加`, d => moveTpl(d, null, nm)));
     }
-    inner.appendChild(body);
+    inner.appendChild(fbody);
   }
-
   wrap.appendChild(inner);
   return wrap;
 }
 
-// =============================================
+// =====================
 // レンダリング
-// =============================================
+// =====================
 function render() {
   const main = document.getElementById('main');
   main.innerHTML = '';
-  const roots = state.cats.filter(c => !c.parent);
-  roots.forEach(c => main.appendChild(makeFolder(c, render)));
+  state.cats.filter(c => !c.parent).forEach(c => main.appendChild(makeFolder(c)));
 }
 
-// =============================================
+// =====================
 // 初期化
-// =============================================
-function init() {
-  loadState();
-
-  // テーマ
+// =====================
+async function init() {
   document.documentElement.setAttribute('data-theme', state.theme);
   document.getElementById('theme-btn').addEventListener('click', () => {
     state.theme = state.theme === 'k' ? '' : 'k';
@@ -496,12 +477,22 @@ function init() {
     document.documentElement.setAttribute('data-theme', state.theme);
   });
 
-  // ローディング非表示
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('hdr').style.display = '';
-  document.getElementById('main').style.display = '';
+  try {
+    const [cats, tpls] = await Promise.all([sbGet('categories'), sbGet('templates')]);
+    state.cats = Array.isArray(cats) && cats.length > 0 ? cats : INIT_CATS;
+    state.tpls = Array.isArray(tpls) ? tpls : [];
+    lastCatsHash = JSON.stringify(state.cats);
+    lastTplsHash = JSON.stringify(state.tpls);
+    state.cats.forEach(c => { if (state.openFolders[c.name] === undefined) state.openFolders[c.name] = true; });
+  } catch(e) {
+    state.cats = JSON.parse(JSON.stringify(INIT_CATS));
+    state.tpls = [];
+    toast('データ読み込みエラー。オフラインで動作します。');
+  }
 
+  document.getElementById('overlay').style.display = 'none';
   render();
+  startPolling();
 }
 
 window.addEventListener('DOMContentLoaded', init);
