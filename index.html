@@ -10,14 +10,12 @@
   --primary:#4D644A; --primary-l:#E9ECE8; --primary-h:#3A4C38;
   --border:#DCD8D0; --border-s:#BDB7AB;
   --accent:#8F4B4B; --accent-l:#F5EDED;
-  --r:8px; --rl:12px;
-  --shadow:0 1px 3px rgba(0,0,0,.07);
+  --r:8px; --rl:12px; --shadow:0 1px 3px rgba(0,0,0,.07);
 }
 [data-theme="k"] {
   --bg:#EBE1D5; --card:#FFFDF9; --text:#4A3C31; --muted:#8A7B6E;
   --primary:#8D5A3A; --primary-l:#F6EFEA; --primary-h:#6D442A;
-  --border:#DBCFBE; --border-s:#BAA993;
-  --accent:#5C665C; --accent-l:#EBF0EB;
+  --border:#DBCFBE; --border-s:#BAA993; --accent:#5C665C; --accent-l:#EBF0EB;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;}
@@ -29,12 +27,9 @@ button{cursor:pointer;font-family:inherit;}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:pulse 1.4s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-size:14px;font-weight:600;border:1px solid transparent;transition:all .15s;}
-.btn-p{background:var(--primary);color:#fff;}
-.btn-p:hover{background:var(--primary-h);}
-.btn-o{background:var(--card);border-color:var(--border-s);color:var(--text);}
-.btn-o:hover{background:var(--bg);}
-.btn-ghost{background:none;border:none;color:var(--muted);padding:6px 10px;font-size:13px;font-weight:600;}
-.btn-ghost:hover{color:var(--text);}
+.btn-p{background:var(--primary);color:#fff;} .btn-p:hover{background:var(--primary-h);}
+.btn-o{background:var(--card);border-color:var(--border-s);color:var(--text);} .btn-o:hover{background:var(--bg);}
+.btn-ghost{background:none;border:none;color:var(--muted);padding:6px 10px;font-size:13px;font-weight:600;} .btn-ghost:hover{color:var(--text);}
 .btn-danger{background:none;border:none;color:var(--accent);padding:6px 10px;font-size:13px;font-weight:600;}
 #main{max-width:960px;margin:0 auto;padding:32px 20px 100px;}
 .section{margin-top:52px;margin-bottom:32px;}
@@ -51,7 +46,7 @@ button{cursor:pointer;font-family:inherit;}
 .tcard.dragging{opacity:.4;}
 .tcard-hdr{padding:13px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
 .tcard-hdr:hover{background:var(--bg);}
-.drag-handle{color:var(--border-s);cursor:grab;font-size:15px;padding:2px 6px;touch-action:none;}
+.drag-handle{color:var(--border-s);cursor:grab;font-size:15px;padding:2px 6px;}
 .badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid;white-space:nowrap;}
 .badge-tpl{background:var(--primary-l);color:var(--primary);border-color:var(--primary);}
 .badge-flow{background:var(--accent-l);color:var(--accent);border-color:var(--accent);}
@@ -86,28 +81,18 @@ textarea.form-input{resize:vertical;}
 </style>
 </head>
 <body>
-
-<div id="overlay">
-  <div class="spinner"></div>
-  <span style="color:var(--muted);font-weight:600">データを読み込み中...</span>
-</div>
+<div id="overlay"><div class="spinner"></div><span style="color:var(--muted);font-weight:600">データを読み込み中...</span></div>
 <div id="toast"></div>
-
 <div id="hdr">
   <h1>📨 テンプレ管理システム</h1>
   <div class="hdr-r">
-    <div class="sync" id="sync-indicator" style="display:none">
-      <div class="sync-dot"></div>同期中
-    </div>
+    <div class="sync" id="sync-ind" style="display:none"><div class="sync-dot"></div>同期中</div>
     <button class="btn btn-o" id="theme-btn">🎨 テーマ</button>
   </div>
 </div>
 <div id="main"></div>
 
 <script>
-// =====================
-// Supabase設定
-// =====================
 const SUPABASE_URL = 'https://shsowsyuvqwfvodnblhp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoc293c3l1dnF3ZnZvZG5ibGhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxOTMwMjIsImV4cCI6MjA2NDc2OTAyMn0.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
 
@@ -119,7 +104,7 @@ const INIT_CATS = [
 ];
 
 // =====================
-// Supabase API
+// Supabase REST API
 // =====================
 async function sbGet(key) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/app_data?key=eq.${key}&select=value`, {
@@ -133,67 +118,79 @@ async function sbSet(key, value) {
   await fetch(`${SUPABASE_URL}/rest/v1/app_data?key=eq.${key}`, {
     method: 'PATCH',
     headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=minimal'
+      'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=minimal'
     },
     body: JSON.stringify({value, updated_at: new Date().toISOString()})
   });
 }
 
 // =====================
-// ポーリング（5秒ごとに他の人の変更を取得）
-// =====================
-let pollTimer = null;
-let lastCatsHash = '';
-let lastTplsHash = '';
-
-function startPolling() {
-  pollTimer = setInterval(async () => {
-    try {
-      const cats = await sbGet('categories');
-      const tpls = await sbGet('templates');
-      const ch = JSON.stringify(cats);
-      const th = JSON.stringify(tpls);
-      if (ch !== lastCatsHash || th !== lastTplsHash) {
-        if (ch !== lastCatsHash) { state.cats = Array.isArray(cats) && cats.length > 0 ? cats : INIT_CATS; lastCatsHash = ch; }
-        if (th !== lastTplsHash) { state.tpls = Array.isArray(tpls) ? tpls : []; lastTplsHash = th; }
-        render();
-      }
-    } catch(e) {}
-  }, 5000);
-}
-
-// =====================
-// 状態
+// 状態管理
 // =====================
 const state = {
   cats: [], tpls: [],
   theme: localStorage.getItem('theme') || '',
   openCards: new Set(),
   openFolders: {},
-  editingId: null, _editBuf: null,
-  _hilite: null, dragging: null,
+  editingId: null,
+  _editBuf: null,
+  _hilite: null,
+  dragging: null,
   langMap: {},
-  saving: false,
+  // 自分が今操作中かどうか
+  isBusy: false,
 };
+
+// 最後にサーバーから取得したデータのハッシュ
+let serverCatsHash = '';
+let serverTplsHash = '';
+
+function setBusy(val) { state.isBusy = val; }
+
+function showSync(on) {
+  document.getElementById('sync-ind').style.display = on ? 'flex' : 'none';
+}
 
 async function saveCats() {
   showSync(true);
-  lastCatsHash = JSON.stringify(state.cats);
+  serverCatsHash = JSON.stringify(state.cats);
   await sbSet('categories', state.cats);
   showSync(false);
 }
+
 async function saveTpls() {
   showSync(true);
-  lastTplsHash = JSON.stringify(state.tpls);
+  serverTplsHash = JSON.stringify(state.tpls);
   await sbSet('templates', state.tpls);
   showSync(false);
 }
 
-function showSync(on) {
-  document.getElementById('sync-indicator').style.display = on ? 'flex' : 'none';
+// =====================
+// 他ユーザーの変更を30秒ごとにチェック
+// 編集中・保存中はスキップ
+// =====================
+function startPolling() {
+  setInterval(async () => {
+    if (state.isBusy || state.editingId !== null || state.dragging !== null) return;
+    try {
+      const [cats, tpls] = await Promise.all([sbGet('categories'), sbGet('templates')]);
+      const ch = JSON.stringify(cats);
+      const th = JSON.stringify(tpls);
+      let changed = false;
+      if (ch !== serverCatsHash && ch !== JSON.stringify(state.cats)) {
+        state.cats = Array.isArray(cats) && cats.length > 0 ? cats : state.cats;
+        serverCatsHash = ch;
+        changed = true;
+      }
+      if (th !== serverTplsHash && th !== JSON.stringify(state.tpls)) {
+        state.tpls = Array.isArray(tpls) ? tpls : state.tpls;
+        serverTplsHash = th;
+        changed = true;
+      }
+      if (changed) { render(); toast('他のユーザーの変更を反映しました'); }
+    } catch(e) {}
+  }, 30000);
 }
 
 // =====================
@@ -203,7 +200,7 @@ function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 1800);
+  setTimeout(() => el.classList.remove('show'), 2000);
 }
 
 function h(tag, attrs, ...children) {
@@ -240,10 +237,7 @@ function makeDropZone(label, onDrop) {
   const dz = h('div', {'class':'dz'}, h('span', {'class':'dz-label'}, label));
   dz.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('over'); });
   dz.addEventListener('dragleave', e => { e.stopPropagation(); dz.classList.remove('over'); });
-  dz.addEventListener('drop', e => {
-    e.preventDefault(); e.stopPropagation(); dz.classList.remove('over');
-    if (state.dragging) onDrop(state.dragging);
-  });
+  dz.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('over'); if (state.dragging) onDrop(state.dragging); });
   return dz;
 }
 
@@ -257,9 +251,10 @@ function hiliteCard(id) {
 
 async function moveTpl(drag, targetId, targetCat) {
   if (drag.type !== 'tpl') return;
+  setBusy(true);
   const dragId = drag.id;
   const item = state.tpls.find(t => t.id === dragId);
-  if (!item) return;
+  if (!item) { setBusy(false); return; }
   const oldCat = item.category;
   const rest = state.tpls.filter(t => t.id !== dragId);
   const tgtItems = rest.filter(t => t.category === targetCat).sort((a,b) => (a.order||0)-(b.order||0));
@@ -277,6 +272,7 @@ async function moveTpl(drag, targetId, targetCat) {
   state.tpls = [...rest.filter(t => t.category !== targetCat && t.category !== oldCat), ...tgtItems, ...srcItems];
   render();
   await saveTpls();
+  setBusy(false);
 }
 
 // =====================
@@ -288,8 +284,7 @@ function makeCard(t) {
   const isEditing = state.editingId === t.id;
   const lang = state.langMap[t.id] || 'ja';
   const isHilite = state._hilite === t.id;
-
-  const card = h('div', {'class':'tcard' + (isHilite?' hilite':''), 'id':'c'+t.id});
+  const card = h('div', {'class':'tcard'+(isHilite?' hilite':''), 'id':'c'+t.id});
 
   if (isEditing) {
     const ed = state._editBuf || {...t};
@@ -298,7 +293,7 @@ function makeCard(t) {
     titleInput.value = ed.title || '';
     titleInput.addEventListener('input', () => ed.title = titleInput.value);
     const typeSelect = h('select', {'class':'form-input'});
-    ['テンプレ','流れ'].forEach(v => { const o = h('option',{'value':v},v); if(ed.itemType===v)o.selected=true; typeSelect.appendChild(o); });
+    ['テンプレ','流れ'].forEach(v => { const o = h('option',{'value':v},v); if(ed.itemType===v) o.selected=true; typeSelect.appendChild(o); });
     typeSelect.addEventListener('change', () => { ed.itemType = typeSelect.value; state._editBuf = ed; render(); });
     const jaArea = h('textarea', {'class':'form-input','style':{height:'160px'}});
     jaArea.value = ed.ja || '';
@@ -309,33 +304,39 @@ function makeCard(t) {
     const flowArea = h('textarea', {'class':'form-input','style':{height:'180px'}});
     flowArea.value = ed.flow || '';
     flowArea.addEventListener('input', () => ed.flow = flowArea.value);
-
     const isFlowEdit = ed.itemType === '流れ';
-    const form = h('div', {'class':'edit-form'},
+    card.appendChild(h('div', {'class':'edit-form'},
       h('div', {'class':'form-row'},
-        h('div', {'class':'form-group'}, h('label', {'class':'form-label'}, 'タイトル'), titleInput),
-        h('div', {'class':'form-group w140'}, h('label', {'class':'form-label'}, 'タイプ'), typeSelect),
+        h('div', {'class':'form-group'}, h('label',{'class':'form-label'},'タイトル'), titleInput),
+        h('div', {'class':'form-group w140'}, h('label',{'class':'form-label'},'タイプ'), typeSelect),
       ),
       ...(isFlowEdit
-        ? [h('div', {'class':'flow-area'}, h('div',{'class':'flow-label'},'📋 対応の流れ・社内マニュアル'), flowArea)]
-        : [
-            h('div', {'class':'form-group','style':{marginBottom:'12px'}}, h('label',{'class':'form-label'},'🇯🇵 日本語'), jaArea),
-            h('div', {'class':'form-group','style':{marginBottom:'14px'}}, h('label',{'class':'form-label'},'🇬🇧 English'), enArea),
-          ]
+        ? [h('div',{'class':'flow-area'},h('div',{'class':'flow-label'},'📋 対応の流れ・社内マニュアル'),flowArea)]
+        : [h('div',{'class':'form-group','style':{marginBottom:'12px'}},h('label',{'class':'form-label'},'🇯🇵 日本語'),jaArea),
+           h('div',{'class':'form-group','style':{marginBottom:'14px'}},h('label',{'class':'form-label'},'🇬🇧 English'),enArea)]
       ),
       h('div', {'class':'form-actions'},
-        h('button', {'class':'btn btn-o', 'onClick': () => { state.editingId=null; state._editBuf=null; render(); }}, 'キャンセル'),
+        h('button', {'class':'btn btn-o', 'onClick': () => {
+          // 新規追加でキャンセルした場合は削除
+          const exists = state.tpls.find(x => x.id === ed.id && (x.ja || x.en || x.flow || x.title !== '新規アイテム'));
+          if (!exists && ed.title === '新規アイテム') {
+            state.tpls = state.tpls.filter(x => x.id !== ed.id);
+            saveTpls();
+          }
+          state.editingId = null; state._editBuf = null; setBusy(false); render();
+        }}, 'キャンセル'),
         h('button', {'class':'btn btn-p', 'onClick': async () => {
+          setBusy(true);
           const idx = state.tpls.findIndex(x => x.id === ed.id);
           if (idx !== -1) state.tpls[idx] = {...ed}; else state.tpls.push({...ed});
           state.editingId = null; state._editBuf = null;
           render();
           await saveTpls();
+          setBusy(false);
           toast('保存しました ✓');
         }}, '保存する'),
       )
-    );
-    card.appendChild(form);
+    ));
     return card;
   }
 
@@ -349,15 +350,13 @@ function makeCard(t) {
     e.stopPropagation();
   });
   handle.addEventListener('dragend', () => { card.classList.remove('dragging'); state.dragging = null; });
-
   hdr.appendChild(handle);
   hdr.appendChild(h('span', {'class':'badge '+(isFlow?'badge-flow':'badge-tpl')}, t.itemType||'テンプレ'));
   hdr.appendChild(h('span', {'class':'tcard-title'}, t.title||'無題'));
-  const acts = h('div', {'class':'tcard-actions'},
-    h('button', {'class':'btn-ghost', 'onClick': e => { e.stopPropagation(); state.editingId=t.id; state._editBuf={...t}; render(); }}, '✏️ 編集'),
-    h('button', {'class':'btn-danger', 'onClick': e => { e.stopPropagation(); if(confirm('削除しますか？')){ state.tpls=state.tpls.filter(x=>x.id!==t.id); render(); saveTpls(); }}}, '🗑️'),
-  );
-  hdr.appendChild(acts);
+  hdr.appendChild(h('div', {'class':'tcard-actions'},
+    h('button', {'class':'btn-ghost', 'onClick': e => { e.stopPropagation(); setBusy(true); state.editingId=t.id; state._editBuf={...t}; render(); }}, '✏️ 編集'),
+    h('button', {'class':'btn-danger', 'onClick': e => { e.stopPropagation(); if(confirm('削除しますか？')){ setBusy(true); state.tpls=state.tpls.filter(x=>x.id!==t.id); render(); saveTpls().then(()=>setBusy(false)); }}}, '🗑️'),
+  ));
   hdr.addEventListener('click', () => { isOpen ? state.openCards.delete(t.id) : state.openCards.add(t.id); render(); });
   card.appendChild(hdr);
 
@@ -372,10 +371,8 @@ function makeCard(t) {
       const tabs = h('div', {'class':'lang-tabs'},
         h('button', {'class':'btn '+(lang==='ja'?'btn-p':'btn-o'), 'onClick':()=>{state.langMap[t.id]='ja';render();}}, '🇯🇵 日本語'),
         h('button', {'class':'btn '+(lang==='en'?'btn-p':'btn-o'), 'onClick':()=>{state.langMap[t.id]='en';render();}}, '🇬🇧 English'),
+        h('button', {'class':'btn btn-o ml', 'onClick': () => { if(cur) navigator.clipboard.writeText(cur).then(()=>toast('コピーしました ✓')); }, 'disabled': !cur ? '' : null}, cur?'📋 コピー':'空です'),
       );
-      const copyBtn = h('button', {'class':'btn btn-o ml', 'onClick': () => { if(cur) navigator.clipboard.writeText(cur).then(()=>toast('コピーしました ✓')); }}, cur?'📋 コピー':'空です');
-      if (!cur) copyBtn.disabled = true;
-      tabs.appendChild(copyBtn);
       const pre = h('pre', {'class':'content'});
       pre.appendChild(renderText(cur, hiliteCard));
       body.appendChild(tabs);
@@ -395,21 +392,21 @@ function makeFolder(cat) {
   const items = state.tpls.filter(t => t.category === nm).sort((a,b) => (a.order||0)-(b.order||0));
   const isOpen = state.openFolders[nm] !== false;
 
-  const drop = (e, targetId=null) => { e.preventDefault(); if(state.dragging) moveTpl(state.dragging, targetId, nm); };
+  const doDrop = (drag, targetId=null) => { if(drag) moveTpl(drag, targetId, nm); };
 
   if (cat.type === 'section') {
     const sec = h('div', {'class':'section'});
     const shdr = h('div', {'class':'section-hdr'}, h('div', {'class':'section-title'}, nm));
     shdr.addEventListener('dragover', e => e.preventDefault());
-    shdr.addEventListener('drop', e => drop(e));
+    shdr.addEventListener('drop', e => { e.preventDefault(); doDrop(state.dragging); });
     sec.appendChild(shdr);
     const body = h('div', {'style':{paddingLeft:'8px'}});
     children.forEach(c => body.appendChild(makeFolder(c)));
     items.forEach(t => {
-      body.appendChild(makeDropZone('ここに挿入', d => moveTpl(d, t.id, nm)));
+      body.appendChild(makeDropZone('ここに挿入', d => doDrop(d, t.id)));
       body.appendChild(makeCard(t));
     });
-    body.appendChild(makeDropZone(`${nm}の末尾に追加`, d => moveTpl(d, null, nm)));
+    body.appendChild(makeDropZone(`${nm}の末尾に追加`, d => doDrop(d)));
     sec.appendChild(body);
     return sec;
   }
@@ -418,13 +415,13 @@ function makeFolder(cat) {
   const inner = h('div', {'class':'folder-inner'+(cat.parent?' nested':'')});
   const fhdr = h('div', {'class':'folder-hdr'});
   fhdr.addEventListener('dragover', e => e.preventDefault());
-  fhdr.addEventListener('drop', e => { drop(e); state.openFolders[nm]=true; });
-
+  fhdr.addEventListener('drop', e => { e.preventDefault(); doDrop(state.dragging); state.openFolders[nm]=true; });
   fhdr.appendChild(h('span', {'style':{color:'var(--muted)',fontSize:'13px',width:'16px'}}, isOpen?'▼':'▶'));
   fhdr.appendChild(h('span', {}, '📂'));
   fhdr.appendChild(h('span', {'style':{flex:'1',fontWeight:'700',fontSize:'16px',marginLeft:'6px'}}, nm));
   const addBtn = h('button', {'class':'btn btn-p', 'onClick': async e => {
     e.stopPropagation();
+    setBusy(true);
     const id = Date.now();
     const newT = {id, title:'新規アイテム', category:nm, itemType:'テンプレ', order:999, ja:'', en:'', flow:''};
     state.tpls.push(newT);
@@ -445,11 +442,11 @@ function makeFolder(cat) {
     const fbody = h('div', {'class':'folder-body'});
     children.forEach(c => fbody.appendChild(makeFolder(c)));
     items.forEach(t => {
-      fbody.appendChild(makeDropZone('ここに挿入', d => moveTpl(d, t.id, nm)));
+      fbody.appendChild(makeDropZone('ここに挿入', d => doDrop(d, t.id)));
       fbody.appendChild(makeCard(t));
     });
     if (children.length > 0 || items.length > 0) {
-      fbody.appendChild(makeDropZone(`${nm}の末尾に追加`, d => moveTpl(d, null, nm)));
+      fbody.appendChild(makeDropZone(`${nm}の末尾に追加`, d => doDrop(d)));
     }
     inner.appendChild(fbody);
   }
@@ -479,15 +476,15 @@ async function init() {
 
   try {
     const [cats, tpls] = await Promise.all([sbGet('categories'), sbGet('templates')]);
-    state.cats = Array.isArray(cats) && cats.length > 0 ? cats : INIT_CATS;
+    state.cats = Array.isArray(cats) && cats.length > 0 ? cats : JSON.parse(JSON.stringify(INIT_CATS));
     state.tpls = Array.isArray(tpls) ? tpls : [];
-    lastCatsHash = JSON.stringify(state.cats);
-    lastTplsHash = JSON.stringify(state.tpls);
+    serverCatsHash = JSON.stringify(state.cats);
+    serverTplsHash = JSON.stringify(state.tpls);
     state.cats.forEach(c => { if (state.openFolders[c.name] === undefined) state.openFolders[c.name] = true; });
   } catch(e) {
     state.cats = JSON.parse(JSON.stringify(INIT_CATS));
     state.tpls = [];
-    toast('データ読み込みエラー。オフラインで動作します。');
+    toast('読み込みエラー。再読み込みしてください。');
   }
 
   document.getElementById('overlay').style.display = 'none';
