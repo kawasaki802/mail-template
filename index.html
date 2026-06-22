@@ -1,234 +1,510 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メールテンプレート管理システム</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    :root{--bg:#EAE8E1;--card:#F8F7F4;--text:#333;--muted:#666;--primary:#4D644A;--primary-light:#E9ECE8;--border:#DCD8D0;--border-s:#BDB7AB;--accent:#8F4B4B;--accent-light:#F5EDED;--r:8px;--rl:12px;}
-    [data-theme=k]{--bg:#EBE1D5;--card:#FFFDF9;--text:#4A3C31;--muted:#8A7B6E;--primary:#8D5A3A;--primary-light:#F6EFEA;--border:#DBCFBE;--border-s:#BAA993;--accent:#5C665C;--accent-light:#EBF0EB;}
-    *{box-sizing:border-box;}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:sans-serif;}
-    .hdr{background:var(--card);border-bottom:1px solid var(--border);padding:14px 24px;position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center;}
-    .hdr h1{margin:0;font-size:20px;}
-    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .2s;}
-    .btn-p{background:var(--primary);color:#fff;border-color:var(--primary);}
-    .btn-o{background:var(--card);border-color:var(--border-s);color:var(--text);}
-    .btn-g{background:transparent;color:var(--muted);border:none;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;}
-    .btn-d{background:transparent;color:var(--accent);border:none;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;}
-    label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;}
-    input,select,textarea{width:100%;padding:10px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--card);color:var(--text);font-size:15px;font-family:inherit;}
-    textarea{resize:vertical;}
-    .card{background:var(--card);border-radius:var(--rl);border:1px solid var(--border);overflow:hidden;}
-    .card-hi{border:2px solid var(--primary);box-shadow:0 0 0 4px var(--primary-light);}
-    .ch{padding:14px 20px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;}
-    .cb{padding:0 20px 20px;border-top:1px solid var(--border);}
-    .hdl{color:var(--border-s);cursor:grab;font-size:16px;}
-    .bdg{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid;white-space:nowrap;}
-    .bdg-t{background:var(--primary-light);color:var(--primary);border-color:var(--primary);}
-    .bdg-f{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
-    .sec-hdr{border-bottom:2px solid var(--border-s);padding-bottom:14px;margin-bottom:14px;}
-    .sec-ttl{font-size:24px;font-weight:800;}
-    .pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:16px 20px;font-size:15px;line-height:1.9;white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit;}
-    .dz{height:12px;display:flex;align-items:center;justify-content:center;transition:.2s;margin:-4px 0;position:relative;z-index:10;border-radius:var(--r);}
-    .dz.on{height:40px;background:var(--primary-light);border:2px dashed var(--primary);margin:4px 0;}
-    .dz span{font-size:12px;color:var(--primary);font-weight:700;}
-    .lnk{background:var(--card);color:var(--primary);border:1px solid var(--primary);border-radius:6px;padding:3px 8px;margin:0 3px;font-size:13px;font-weight:600;cursor:pointer;}
-    .main{max-width:960px;margin:0 auto;padding:32px 20px 80px;}
-    .gap{display:flex;gap:8px;margin-bottom:14px;}
-    .ml-auto{margin-left:auto;}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📨 テンプレ管理システム</title>
+<style>
+:root {
+  --bg:#EAE8E1; --card:#F8F7F4; --text:#333; --muted:#777;
+  --primary:#4D644A; --primary-l:#E9ECE8; --primary-h:#3A4C38;
+  --border:#DCD8D0; --border-s:#BDB7AB;
+  --accent:#8F4B4B; --accent-l:#F5EDED;
+  --r:8px; --rl:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.07);
+}
+[data-theme="k"] {
+  --bg:#EBE1D5; --card:#FFFDF9; --text:#4A3C31; --muted:#8A7B6E;
+  --primary:#8D5A3A; --primary-l:#F6EFEA; --primary-h:#6D442A;
+  --border:#DBCFBE; --border-s:#BAA993;
+  --accent:#5C665C; --accent-l:#EBF0EB;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;}
+button{cursor:pointer;font-family:inherit;}
+
+/* ヘッダー */
+#hdr{background:var(--card);border-bottom:1px solid var(--border);padding:14px 24px;position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);}
+#hdr h1{font-size:20px;font-weight:700;}
+.hdr-btns{display:flex;gap:8px;align-items:center;}
+
+/* ボタン */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-size:14px;font-weight:600;border:1px solid transparent;transition:all .15s;}
+.btn-p{background:var(--primary);color:#fff;}
+.btn-p:hover{background:var(--primary-h);}
+.btn-o{background:var(--card);border-color:var(--border-s);color:var(--text);}
+.btn-o:hover{background:var(--bg);}
+.btn-ghost{background:none;border:none;color:var(--muted);padding:6px 10px;font-size:13px;font-weight:600;}
+.btn-ghost:hover{color:var(--text);}
+.btn-danger{background:none;border:none;color:var(--accent);padding:6px 10px;font-size:13px;font-weight:600;}
+
+/* メイン */
+#main{max-width:960px;margin:0 auto;padding:32px 20px 100px;}
+
+/* セクション */
+.section{margin-top:52px;margin-bottom:32px;}
+.section-hdr{border-bottom:2px solid var(--border-s);padding-bottom:14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.section-title{font-size:24px;font-weight:800;}
+
+/* フォルダ */
+.folder{margin-bottom:14px;}
+.folder-inner{background:var(--card);border-radius:var(--rl);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);}
+.folder-inner.nested{border-left:4px solid var(--primary);margin-left:28px;}
+.folder-hdr{padding:14px 20px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.folder-hdr:hover{background:var(--bg);}
+.folder-arrow{color:var(--muted);font-size:13px;width:16px;}
+.folder-body{padding:16px;background:var(--bg);border-top:1px solid var(--border);}
+
+/* テンプレカード */
+.tcard{background:var(--card);border-radius:var(--rl);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);margin-bottom:2px;}
+.tcard.hilite{border:2px solid var(--primary);box-shadow:0 0 0 4px var(--primary-l);}
+.tcard-hdr{padding:13px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.tcard-hdr:hover{background:var(--bg);}
+.drag-handle{color:var(--border-s);cursor:grab;font-size:15px;padding:2px 4px;}
+.drag-handle:active{cursor:grabbing;}
+.badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid;white-space:nowrap;}
+.badge-tpl{background:var(--primary-l);color:var(--primary);border-color:var(--primary);}
+.badge-flow{background:var(--accent-l);color:var(--accent);border-color:var(--accent);}
+.tcard-title{flex:1;font-size:16px;font-weight:600;}
+.tcard-actions{display:flex;gap:4px;}
+.tcard-body{padding:0 18px 18px;border-top:1px solid var(--border);}
+
+/* コンテンツ */
+.lang-tabs{display:flex;gap:8px;padding-top:16px;margin-bottom:14px;align-items:center;}
+.lang-tabs .ml{margin-left:auto;}
+pre.content{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:16px 20px;font-size:15px;line-height:1.9;white-space:pre-wrap;word-break:break-word;font-family:inherit;}
+.link-btn{background:var(--card);color:var(--primary);border:1px solid var(--primary);border-radius:6px;padding:3px 8px;margin:0 3px;font-size:13px;font-weight:600;cursor:pointer;}
+.link-btn:hover{background:var(--primary-l);}
+
+/* 編集フォーム */
+.edit-form{padding:20px;background:var(--card);border-radius:var(--rl);border:2px solid var(--primary);box-shadow:0 0 0 4px var(--primary-l);}
+.form-row{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group.flex2{flex:2;min-width:180px;}
+.form-group.w140{width:140px;}
+.form-label{font-size:12px;color:var(--muted);font-weight:700;}
+.form-input{padding:10px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;font-family:inherit;width:100%;}
+.form-input:focus{outline:none;border-color:var(--primary);}
+textarea.form-input{resize:vertical;}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px;}
+.flow-area{background:var(--accent-l);border-radius:10px;padding:14px;margin-bottom:14px;}
+.flow-label{font-size:12px;color:var(--accent);font-weight:700;margin-bottom:8px;}
+
+/* ドロップゾーン */
+.dz{height:10px;border-radius:var(--r);transition:.15s;margin:-3px 0;position:relative;z-index:10;}
+.dz.over{height:40px;background:var(--primary-l);border:2px dashed var(--primary);margin:4px 0;display:flex;align-items:center;justify-content:center;}
+.dz-label{font-size:12px;color:var(--primary);font-weight:700;display:none;}
+.dz.over .dz-label{display:block;}
+
+/* ローディング */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:14px;}
+.spinner{width:36px;height:36px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* 通知 */
+#toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:10px 18px;border-radius:var(--r);font-size:14px;font-weight:600;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;z-index:999;}
+#toast.show{opacity:1;transform:translateY(0);}
+</style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useMemo, useEffect, useCallback, useRef } = React;
 
+<div id="loading"><div class="spinner"></div><span style="color:var(--muted);font-weight:600">読み込み中...</span></div>
+<div id="toast"></div>
+
+<div id="hdr" style="display:none">
+  <h1>📨 テンプレ管理システム</h1>
+  <div class="hdr-btns">
+    <button class="btn btn-o" id="theme-btn">🎨 テーマ</button>
+  </div>
+</div>
+<div id="main" style="display:none"></div>
+
+<script>
+// =============================================
+// データ管理
+// =============================================
 const INIT_CATS = [
-  {name:"📝 予約〜チェックイン前",parent:null,type:"section"},
-  {name:"予約前",parent:"📝 予約〜チェックイン前",type:"folder"},
-  {name:"マニュアル未読",parent:"📝 予約〜チェックイン前",type:"folder"},
-  {name:"URLが見れない",parent:"📝 予約〜チェックイン前",type:"folder"},
+  {name:"📝 予約〜チェックイン前", parent:null, type:"section"},
+  {name:"予約前", parent:"📝 予約〜チェックイン前", type:"folder"},
+  {name:"マニュアル未読", parent:"📝 予約〜チェックイン前", type:"folder"},
+  {name:"URLが見れない", parent:"📝 予約〜チェックイン前", type:"folder"},
 ];
 
-// ストレージ（まずlocalStorage、後でAPIに差し替え可能）
-const store = {
-  getCats: () => { try { const d = localStorage.getItem('cats'); return d ? JSON.parse(d) : null; } catch(e){ return null; } },
-  saveCats: (d) => { try { localStorage.setItem('cats', JSON.stringify(d)); } catch(e){} },
-  getTpls: () => { try { const d = localStorage.getItem('tpls'); return d ? JSON.parse(d) : null; } catch(e){ return null; } },
-  saveTpls: (d) => { try { localStorage.setItem('tpls', JSON.stringify(d)); } catch(e){} },
+let state = {
+  cats: [],
+  tpls: [],
+  theme: '',
+  dragging: null,
+  editingId: null,
+  openCards: new Set(),
+  openFolders: {},
+  langMap: {},
 };
 
-function CopyBtn({text}) {
-  const [ok, setOk] = useState(false);
-  if (!text) return <button className="btn btn-o" style={{opacity:.5}} disabled>空です</button>;
-  return <button className={`btn ${ok?'btn-p':'btn-o'}`} onClick={()=>{navigator.clipboard.writeText(text).then(()=>{setOk(true);setTimeout(()=>setOk(false),1500);})}}>{ok?"✓ コピー済":"📋 コピー"}</button>;
+function loadState() {
+  try {
+    const cats = JSON.parse(localStorage.getItem('cats') || 'null');
+    const tpls = JSON.parse(localStorage.getItem('tpls') || 'null');
+    state.cats = Array.isArray(cats) ? cats : JSON.parse(JSON.stringify(INIT_CATS));
+    state.tpls = Array.isArray(tpls) ? tpls : [];
+    state.theme = localStorage.getItem('theme') || '';
+    // デフォルトでフォルダを開く
+    state.cats.forEach(c => { state.openFolders[c.name] = true; });
+  } catch(e) {
+    state.cats = JSON.parse(JSON.stringify(INIT_CATS));
+    state.tpls = [];
+  }
 }
 
-function DZ({onDrop, label}) {
-  const [ov, setOv] = useState(false);
-  return <div className={`dz${ov?' on':''}`} onDragOver={e=>{e.preventDefault();e.stopPropagation();setOv(true);}} onDragLeave={e=>{e.stopPropagation();setOv(false);}} onDrop={e=>{e.preventDefault();e.stopPropagation();setOv(false);try{onDrop(JSON.parse(e.dataTransfer.getData('text/plain')));}catch(er){}}}>{ov&&<span>{label||"ここに挿入"}</span>}</div>;
+function saveCats() { localStorage.setItem('cats', JSON.stringify(state.cats)); }
+function saveTpls() { localStorage.setItem('tpls', JSON.stringify(state.tpls)); }
+
+// =============================================
+// ユーティリティ
+// =============================================
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1800);
 }
 
-function LinkText({text, all, onLink}) {
-  if (!text || typeof text!=='string') return null;
-  if (!/\[リンク:(\d+)\]/.test(text)) return <>{text}</>;
-  return <>{text.split(/\[リンク:(\d+)\]/g).map((p,i)=>{
-    if (i%2===1) { const t=all.find(x=>x.id===Number(p)); return <button key={i} className="lnk" onClick={()=>onLink(Number(p))}>🔗 {t?t.title:`ID:${p}`}</button>; }
-    return <span key={i}>{p}</span>;
-  })}</>;
+function el(tag, attrs={}, ...children) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+    else e.setAttribute(k, v);
+  }
+  for (const c of children) {
+    if (c == null) continue;
+    e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  }
+  return e;
 }
 
-function TCard({t, all, onUpdate, onDelete, onLink, hilite}) {
-  const [open, setOpen] = useState(false);
-  const [lang, setLang] = useState('ja');
-  const [editing, setEditing] = useState(false);
-  const [ed, setEd] = useState({...t});
-  const isFlow = t.itemType==='流れ';
-  useEffect(()=>{ if(hilite===t.id) setOpen(true); },[hilite,t.id]);
-  const cur = lang==='ja'?t.ja:lang==='en'?t.en:t.flow;
-  const save = ()=>{ onUpdate(ed); setEditing(false); };
-  const ds = e=>{ e.dataTransfer.setData('text/plain',JSON.stringify({type:'tpl',id:t.id,cat:t.category})); e.stopPropagation(); e.currentTarget.style.opacity='.4'; };
-
-  if (editing) return (
-    <div className={`card card-hi`} style={{padding:20}}>
-      <div style={{display:'flex',gap:12,marginBottom:16,flexWrap:'wrap'}}>
-        <div style={{flex:2,minWidth:180}}><label>タイトル</label><input value={ed.title||''} onChange={e=>setEd({...ed,title:e.target.value})}/></div>
-        <div style={{width:130}}><label>タイプ</label><select value={ed.itemType||'テンプレ'} onChange={e=>setEd({...ed,itemType:e.target.value})}><option value="テンプレ">テンプレ</option><option value="流れ">流れ</option></select></div>
-      </div>
-      {(ed.itemType==='テンプレ'||!ed.itemType)&&<>
-        <div style={{marginBottom:14}}><label>🇯🇵 日本語</label><textarea value={ed.ja||''} onChange={e=>setEd({...ed,ja:e.target.value})} style={{height:160}}/></div>
-        <div style={{marginBottom:16}}><label>🇬🇧 English</label><textarea value={ed.en||''} onChange={e=>setEd({...ed,en:e.target.value})} style={{height:120}}/></div>
-      </>}
-      {ed.itemType==='流れ'&&<div style={{marginBottom:20,background:'var(--accent-light)',padding:16,borderRadius:10}}>
-        <label style={{color:'var(--accent)'}}>📋 対応の流れ</label>
-        <textarea value={ed.flow||''} onChange={e=>setEd({...ed,flow:e.target.value})} style={{height:180}}/>
-      </div>}
-      <div style={{display:'flex',justifyContent:'flex-end',gap:10}}>
-        <button className="btn btn-o" onClick={()=>setEditing(false)}>キャンセル</button>
-        <button className="btn btn-p" onClick={save}>保存する</button>
-      </div>
-    </div>
-  );
-
-  return (
-    <div id={`c${t.id}`} className={`card${hilite===t.id?' card-hi':''}`} draggable onDragStart={ds} onDragEnd={e=>e.currentTarget.style.opacity='1'}>
-      <div className="ch" onClick={()=>setOpen(!open)}>
-        <span className="hdl">☰</span>
-        <span className={`bdg ${isFlow?'bdg-f':'bdg-t'}`}>{t.itemType||'テンプレ'}</span>
-        <span style={{fontWeight:600,fontSize:16,flex:1}}>{t.title||'無題'}</span>
-        <div style={{display:'flex',gap:6}} onClick={e=>e.stopPropagation()}>
-          <button className="btn-g" onClick={()=>{setEd({...t});setEditing(true);setOpen(true);}}>✏️ 編集</button>
-          <button className="btn-d" onClick={()=>{if(confirm('削除しますか？'))onDelete(t.id);}}>🗑️</button>
-        </div>
-      </div>
-      {open&&<div className="cb">
-        {isFlow
-          ? <div style={{paddingTop:14}}><pre className="pre"><LinkText text={t.flow||''} all={all} onLink={onLink}/></pre></div>
-          : <div style={{paddingTop:14}}>
-              <div className="gap">
-                <button onClick={()=>setLang('ja')} className={`btn ${lang==='ja'?'btn-p':'btn-o'}`}>🇯🇵 日本語</button>
-                <button onClick={()=>setLang('en')} className={`btn ${lang==='en'?'btn-p':'btn-o'}`}>🇬🇧 English</button>
-                <div className="ml-auto"><CopyBtn text={cur||''}/></div>
-              </div>
-              <pre className="pre"><LinkText text={cur||''} all={all} onLink={onLink}/></pre>
-            </div>
-        }
-      </div>}
-    </div>
-  );
+function renderText(text, allTpls, onLinkClick) {
+  const span = document.createDocumentFragment();
+  if (!text) return span;
+  const parts = text.split(/\[リンク:(\d+)\]/g);
+  parts.forEach((part, i) => {
+    if (i % 2 === 1) {
+      const id = Number(part);
+      const t = allTpls.find(x => x.id === id);
+      const btn = el('button', {'class':'link-btn', 'onClick': () => onLinkClick(id)}, '🔗 ' + (t ? t.title : `ID:${id}`));
+      span.appendChild(btn);
+    } else if (part) {
+      span.appendChild(document.createTextNode(part));
+    }
+  });
+  return span;
 }
 
-function Folder({cat, cats, tpls, all, onAdd, onUpdate, onDelete, onLink, hilite, onMove, lv=0}) {
-  const nm = cat.name;
-  const [open, setOpen] = useState(true);
-  const children = cats.filter(c=>c.parent===nm);
-  const items = useMemo(()=>tpls.filter(t=>t.category===nm).sort((a,b)=>(a.order||0)-(b.order||0)),[tpls,nm]);
-  const drop = e=>{ e.preventDefault();e.stopPropagation();try{const d=JSON.parse(e.dataTransfer.getData('text/plain'));if(d.type==='tpl'){onMove(d.id,null,nm);setOpen(true);}}catch(er){}};
-  const cp = {cats,tpls,all,onAdd,onUpdate,onDelete,onLink,hilite,onMove};
-
-  if (cat.type==='section') return (
-    <div style={{marginTop:48,marginBottom:28}}>
-      <div className="sec-hdr" onDragOver={e=>e.preventDefault()} onDrop={drop}>
-        <div className="sec-ttl">{nm}</div>
-      </div>
-      <div style={{paddingLeft:8}}>
-        {children.map(c=><Folder key={c.name} cat={c} {...cp} lv={lv+1}/>)}
-        {items.map(t=><React.Fragment key={t.id}><DZ onDrop={d=>{if(d.type==='tpl')onMove(d.id,t.id,nm);}} label="ここに挿入"/><TCard t={t} all={all} onUpdate={onUpdate} onDelete={onDelete} onLink={onLink} hilite={hilite}/></React.Fragment>)}
-        <DZ onDrop={d=>{if(d.type==='tpl')onMove(d.id,null,nm);}} label={`${nm}の末尾に追加`}/>
-      </div>
-    </div>
-  );
-
-  return (
-    <div style={{marginBottom:14,marginLeft:lv>0?32:0}}>
-      <div className="card" style={{borderLeft:lv>0?`4px solid var(--primary)`:'1px solid var(--border)'}}>
-        <div className="ch" onDragOver={e=>e.preventDefault()} onDrop={drop} onClick={()=>setOpen(!open)}>
-          <span style={{color:'var(--muted)',marginRight:8}}>{open?'▼':'▶'}</span>
-          <span style={{fontSize:20,marginRight:6}}>📂</span>
-          <span style={{fontSize:16,fontWeight:700,flex:1}}>{nm}</span>
-          <div onClick={e=>e.stopPropagation()}>
-            <button className="btn btn-p" onClick={()=>{onAdd(nm);setOpen(true);}}>➕ 追加</button>
-          </div>
-        </div>
-        {open&&<div className="cb" style={{background:'var(--bg)',paddingTop:20}}>
-          {children.map(c=><Folder key={c.name} cat={c} {...cp} lv={lv+1}/>)}
-          {items.map(t=><React.Fragment key={t.id}><DZ onDrop={d=>{if(d.type==='tpl')onMove(d.id,t.id,nm);}} label="ここに挿入"/><TCard t={t} all={all} onUpdate={onUpdate} onDelete={onDelete} onLink={onLink} hilite={hilite}/></React.Fragment>)}
-          {(children.length>0||items.length>0)&&<DZ onDrop={d=>{if(d.type==='tpl')onMove(d.id,null,nm);}} label={`${nm}の末尾に追加`}/>}
-        </div>}
-      </div>
-    </div>
-  );
+// =============================================
+// ドロップゾーン
+// =============================================
+function makeDropZone(label, onDrop) {
+  const dz = el('div', {'class':'dz'}, el('span', {'class':'dz-label'}, label));
+  dz.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', e => { e.stopPropagation(); dz.classList.remove('over'); });
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); e.stopPropagation(); dz.classList.remove('over');
+    if (state.dragging) onDrop(state.dragging);
+  });
+  return dz;
 }
 
-function App() {
-  const [cats, setCats] = useState(()=>store.getCats()||INIT_CATS);
-  const [tpls, setTpls] = useState(()=>store.getTpls()||[]);
-  const [theme, setTheme] = useState(()=>localStorage.getItem('theme')||'');
-  const [hilite, setHilite] = useState(null);
+// =============================================
+// テンプレカード
+// =============================================
+function makeTemplateCard(t, onRender) {
+  const isFlow = t.itemType === '流れ';
+  const isOpen = state.openCards.has(t.id);
+  const isEditing = state.editingId === t.id;
+  const lang = state.langMap[t.id] || 'ja';
+  const isHilite = state._hilite === t.id;
 
-  useEffect(()=>{ document.documentElement.setAttribute('data-theme',theme); localStorage.setItem('theme',theme); },[theme]);
-  useEffect(()=>{ store.saveCats(cats); },[cats]);
-  useEffect(()=>{ store.saveTpls(tpls); },[tpls]);
+  const card = el('div', {'class': 'tcard' + (isHilite ? ' hilite' : ''), 'id': 'c' + t.id});
 
-  const addTpl = useCallback(cat=>{ setTpls(p=>[...p,{id:Date.now(),title:'新規アイテム',category:cat,itemType:'テンプレ',order:999,ja:'',en:'',flow:''}]); },[]);
-  const updateTpl = useCallback(t=>{ setTpls(p=>p.find(x=>x.id===t.id)?p.map(x=>x.id===t.id?t:x):[...p,t]); },[]);
-  const deleteTpl = useCallback(id=>{ setTpls(p=>p.filter(x=>x.id!==id)); },[]);
+  // 編集モード
+  if (isEditing) {
+    const ed = state._editBuf || {...t};
+    state._editBuf = ed;
 
-  const moveTpl = useCallback((dragId, targetId, targetCat)=>{
-    setTpls(prev=>{
-      const item = prev.find(t=>t.id===dragId);
-      if (!item) return prev;
-      const oldCat = item.category;
-      const rest = prev.filter(t=>t.id!==dragId);
-      const tgtItems = rest.filter(t=>t.category===targetCat).sort((a,b)=>(a.order||0)-(b.order||0));
-      const moved = {...item, category:targetCat};
-      if (targetId) { const i=tgtItems.findIndex(t=>t.id===targetId); tgtItems.splice(i!==-1?i:tgtItems.length,0,moved); }
-      else tgtItems.push(moved);
-      tgtItems.forEach((t,i)=>t.order=i+1);
-      let srcItems=[];
-      if (oldCat!==targetCat) { srcItems=rest.filter(t=>t.category===oldCat).sort((a,b)=>(a.order||0)-(b.order||0)); srcItems.forEach((t,i)=>t.order=i+1); }
-      return [...rest.filter(t=>t.category!==targetCat&&t.category!==oldCat),...tgtItems,...srcItems];
+    const titleInput = el('input', {'class':'form-input', 'type':'text', 'value': ed.title || ''});
+    titleInput.addEventListener('input', () => ed.title = titleInput.value);
+
+    const typeSelect = el('select', {'class':'form-input'});
+    ['テンプレ','流れ'].forEach(v => {
+      const o = el('option', {'value':v}, v);
+      if (ed.itemType === v) o.selected = true;
+      typeSelect.appendChild(o);
     });
-  },[]);
+    typeSelect.addEventListener('change', () => { ed.itemType = typeSelect.value; state._editBuf = ed; onRender(); });
 
-  const roots = cats.filter(c=>!c.parent);
+    const jaArea = el('textarea', {'class':'form-input', 'style':{height:'160px'}}, '');
+    jaArea.value = ed.ja || '';
+    jaArea.addEventListener('input', () => ed.ja = jaArea.value);
 
-  return <>
-    <div className="hdr">
-      <h1>📨 テンプレ管理システム</h1>
-      <button className="btn btn-o" onClick={()=>setTheme(t=>t==='k'?'':'k')}>🎨 テーマ</button>
-    </div>
-    <div className="main">
-      {roots.map(c=><Folder key={c.name} cat={c} cats={cats} tpls={tpls} all={tpls} onAdd={addTpl} onUpdate={updateTpl} onDelete={deleteTpl} onLink={id=>{setHilite(id);setTimeout(()=>setHilite(null),2000);document.getElementById('c'+id)?.scrollIntoView({behavior:'smooth'});}} hilite={hilite} onMove={moveTpl}/>)}
-    </div>
-  </>;
+    const enArea = el('textarea', {'class':'form-input', 'style':{height:'120px'}}, '');
+    enArea.value = ed.en || '';
+    enArea.addEventListener('input', () => ed.en = enArea.value);
+
+    const flowArea = el('textarea', {'class':'form-input', 'style':{height:'180px'}}, '');
+    flowArea.value = ed.flow || '';
+    flowArea.addEventListener('input', () => ed.flow = flowArea.value);
+
+    const isFlowEdit = ed.itemType === '流れ';
+
+    const form = el('div', {'class':'edit-form'},
+      el('div', {'class':'form-row'},
+        el('div', {'class':'form-group flex2'}, el('label', {'class':'form-label'}, 'タイトル'), titleInput),
+        el('div', {'class':'form-group w140'}, el('label', {'class':'form-label'}, 'タイプ'), typeSelect),
+      ),
+      ...(isFlowEdit ? [
+        el('div', {'class':'flow-area'},
+          el('div', {'class':'flow-label'}, '📋 対応の流れ・社内マニュアル'),
+          flowArea
+        )
+      ] : [
+        el('div', {'class':'form-group', 'style':{marginBottom:'12px'}}, el('label', {'class':'form-label'}, '🇯🇵 日本語'), jaArea),
+        el('div', {'class':'form-group', 'style':{marginBottom:'14px'}}, el('label', {'class':'form-label'}, '🇬🇧 English'), enArea),
+      ]),
+      el('div', {'class':'form-actions'},
+        el('button', {'class':'btn btn-o', 'onClick': () => { state.editingId = null; state._editBuf = null; onRender(); }}, 'キャンセル'),
+        el('button', {'class':'btn btn-p', 'onClick': () => {
+          const idx = state.tpls.findIndex(x => x.id === ed.id);
+          if (idx !== -1) state.tpls[idx] = {...ed};
+          else state.tpls.push({...ed});
+          saveTpls();
+          state.editingId = null; state._editBuf = null; onRender();
+          toast('保存しました');
+        }}, '保存する'),
+      )
+    );
+    card.appendChild(form);
+    return card;
+  }
+
+  // 通常表示
+  const hdr = el('div', {'class':'tcard-hdr'});
+
+  const handle = el('span', {'class':'drag-handle'}, '☰');
+  handle.draggable = true;
+  handle.addEventListener('dragstart', e => {
+    state.dragging = {type:'tpl', id:t.id, cat:t.category};
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => card.style.opacity = '.4', 0);
+    e.stopPropagation();
+  });
+  handle.addEventListener('dragend', () => { card.style.opacity = '1'; state.dragging = null; });
+
+  const badge = el('span', {'class':'badge ' + (isFlow ? 'badge-flow' : 'badge-tpl')}, t.itemType || 'テンプレ');
+  const title = el('span', {'class':'tcard-title'}, t.title || '無題');
+  const actions = el('div', {'class':'tcard-actions'},
+    el('button', {'class':'btn-ghost', 'onClick': e => {
+      e.stopPropagation();
+      state.editingId = t.id; state._editBuf = {...t}; onRender();
+    }}, '✏️ 編集'),
+    el('button', {'class':'btn-danger', 'onClick': e => {
+      e.stopPropagation();
+      if (confirm('削除しますか？')) {
+        state.tpls = state.tpls.filter(x => x.id !== t.id);
+        saveTpls(); onRender();
+      }
+    }}, '🗑️'),
+  );
+
+  hdr.appendChild(handle);
+  hdr.appendChild(badge);
+  hdr.appendChild(title);
+  hdr.appendChild(actions);
+  hdr.addEventListener('click', () => {
+    if (isOpen) state.openCards.delete(t.id); else state.openCards.add(t.id);
+    onRender();
+  });
+  card.appendChild(hdr);
+
+  if (isOpen) {
+    const body = el('div', {'class':'tcard-body'});
+
+    if (isFlow) {
+      const pre = el('pre', {'class':'content'});
+      pre.appendChild(renderText(t.flow || '', state.tpls, id => hiliteCard(id, onRender)));
+      body.appendChild(el('div', {'style':{paddingTop:'14px'}}, pre));
+    } else {
+      const tabs = el('div', {'class':'lang-tabs'});
+      const btnJa = el('button', {'class':'btn ' + (lang==='ja'?'btn-p':'btn-o'), 'onClick': () => { state.langMap[t.id]='ja'; onRender(); }}, '🇯🇵 日本語');
+      const btnEn = el('button', {'class':'btn ' + (lang==='en'?'btn-p':'btn-o'), 'onClick': () => { state.langMap[t.id]='en'; onRender(); }}, '🇬🇧 English');
+      const cur = lang === 'ja' ? (t.ja || '') : (t.en || '');
+      const copyBtn = el('button', {'class':'btn btn-o ml', 'onClick': () => {
+        if (!cur) return;
+        navigator.clipboard.writeText(cur).then(() => toast('コピーしました ✓'));
+      }}, cur ? '📋 コピー' : '空です');
+      if (!cur) copyBtn.disabled = true;
+      tabs.appendChild(btnJa);
+      tabs.appendChild(btnEn);
+      tabs.appendChild(copyBtn);
+
+      const pre = el('pre', {'class':'content'});
+      pre.appendChild(renderText(cur, state.tpls, id => hiliteCard(id, onRender)));
+      body.appendChild(tabs);
+      body.appendChild(pre);
+    }
+    card.appendChild(body);
+  }
+
+  return card;
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+function hiliteCard(id, onRender) {
+  state._hilite = id;
+  state.openCards.add(id);
+  onRender();
+  setTimeout(() => {
+    const el = document.getElementById('c' + id);
+    if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
+  }, 50);
+  setTimeout(() => { state._hilite = null; onRender(); }, 2200);
+}
+
+// =============================================
+// フォルダ
+// =============================================
+function makeFolder(cat, onRender) {
+  const nm = cat.name;
+  const children = state.cats.filter(c => c.parent === nm);
+  const items = state.tpls.filter(t => t.category === nm).sort((a,b) => (a.order||0)-(b.order||0));
+  const isOpen = state.openFolders[nm] !== false;
+
+  const moveTpl = (drag, targetId, targetCat) => {
+    if (drag.type !== 'tpl') return;
+    const dragId = drag.id;
+    const item = state.tpls.find(t => t.id === dragId);
+    if (!item) return;
+    const oldCat = item.category;
+    const rest = state.tpls.filter(t => t.id !== dragId);
+    const tgtItems = rest.filter(t => t.category === targetCat).sort((a,b) => (a.order||0)-(b.order||0));
+    const moved = {...item, category: targetCat};
+    if (targetId !== null) {
+      const i = tgtItems.findIndex(t => t.id === targetId);
+      tgtItems.splice(i !== -1 ? i : tgtItems.length, 0, moved);
+    } else {
+      tgtItems.push(moved);
+    }
+    tgtItems.forEach((t, i) => t.order = i + 1);
+    let srcItems = [];
+    if (oldCat !== targetCat) {
+      srcItems = rest.filter(t => t.category === oldCat).sort((a,b) => (a.order||0)-(b.order||0));
+      srcItems.forEach((t, i) => t.order = i + 1);
+    }
+    state.tpls = [...rest.filter(t => t.category !== targetCat && t.category !== oldCat), ...tgtItems, ...srcItems];
+    saveTpls();
+    onRender();
+  };
+
+  if (cat.type === 'section') {
+    const sec = el('div', {'class':'section'});
+    const hdr = el('div', {'class':'section-hdr'});
+    hdr.appendChild(el('div', {'class':'section-title'}, nm));
+    hdr.addEventListener('dragover', e => e.preventDefault());
+    hdr.addEventListener('drop', e => { e.preventDefault(); if(state.dragging) moveTpl(state.dragging, null, nm); });
+    sec.appendChild(hdr);
+    const body = el('div', {'style':{paddingLeft:'8px'}});
+    children.forEach(c => body.appendChild(makeFolder(c, onRender)));
+    items.forEach(t => {
+      body.appendChild(makeDropZone('ここに挿入', d => moveTpl(d, t.id, nm)));
+      body.appendChild(makeTemplateCard(t, onRender));
+    });
+    body.appendChild(makeDropZone(`${nm}の末尾に追加`, d => moveTpl(d, null, nm)));
+    sec.appendChild(body);
+    return sec;
+  }
+
+  // フォルダ
+  const wrap = el('div', {'class':'folder'});
+  const inner = el('div', {'class':'folder-inner' + (cat.parent !== null ? ' nested' : '')});
+
+  const hdr = el('div', {'class':'folder-hdr'});
+  hdr.addEventListener('dragover', e => e.preventDefault());
+  hdr.addEventListener('drop', e => { e.preventDefault(); if(state.dragging) { moveTpl(state.dragging, null, nm); state.openFolders[nm] = true; } });
+
+  const arrow = el('span', {'class':'folder-arrow'}, isOpen ? '▼' : '▶');
+  const icon = el('span', {}, '📂');
+  const label = el('span', {'style':{flex:'1', fontWeight:'700', fontSize:'16px', marginLeft:'6px'}}, nm);
+  const addBtn = el('button', {'class':'btn btn-p', 'onClick': e => {
+    e.stopPropagation();
+    const id = Date.now();
+    state.tpls.push({id, title:'新規アイテム', category:nm, itemType:'テンプレ', order:999, ja:'', en:'', flow:''});
+    saveTpls();
+    state.openFolders[nm] = true;
+    state.editingId = id;
+    state._editBuf = state.tpls[state.tpls.length - 1];
+    onRender();
+  }}, '➕ 追加');
+
+  hdr.appendChild(arrow);
+  hdr.appendChild(icon);
+  hdr.appendChild(label);
+  hdr.appendChild(addBtn);
+  hdr.addEventListener('click', e => {
+    if (e.target === addBtn || addBtn.contains(e.target)) return;
+    state.openFolders[nm] = !isOpen;
+    onRender();
+  });
+  inner.appendChild(hdr);
+
+  if (isOpen) {
+    const body = el('div', {'class':'folder-body'});
+    children.forEach(c => body.appendChild(makeFolder(c, onRender)));
+    items.forEach(t => {
+      body.appendChild(makeDropZone('ここに挿入', d => moveTpl(d, t.id, nm)));
+      body.appendChild(makeTemplateCard(t, onRender));
+    });
+    if (children.length > 0 || items.length > 0) {
+      body.appendChild(makeDropZone(`${nm}の末尾に追加`, d => moveTpl(d, null, nm)));
+    }
+    inner.appendChild(body);
+  }
+
+  wrap.appendChild(inner);
+  return wrap;
+}
+
+// =============================================
+// レンダリング
+// =============================================
+function render() {
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+  const roots = state.cats.filter(c => !c.parent);
+  roots.forEach(c => main.appendChild(makeFolder(c, render)));
+}
+
+// =============================================
+// 初期化
+// =============================================
+function init() {
+  loadState();
+
+  // テーマ
+  document.documentElement.setAttribute('data-theme', state.theme);
+  document.getElementById('theme-btn').addEventListener('click', () => {
+    state.theme = state.theme === 'k' ? '' : 'k';
+    localStorage.setItem('theme', state.theme);
+    document.documentElement.setAttribute('data-theme', state.theme);
+  });
+
+  // ローディング非表示
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('hdr').style.display = '';
+  document.getElementById('main').style.display = '';
+
+  render();
+}
+
+window.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
